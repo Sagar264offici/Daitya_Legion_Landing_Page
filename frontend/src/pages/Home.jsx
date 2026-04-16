@@ -79,7 +79,7 @@ const Home = () => {
         const playersRaw = await playersRes.json();
         const playersData = Array.isArray(playersRaw) ? playersRaw : [];
         const teamData = await teamRes.json();
-        const tournamentData = await tournamentRes.json();
+        const tournamentData = Array.isArray(await tournamentRes.json()) ? await tournamentRes.json() : [];
 
         const topScorer = [...playersData].sort(
           (a, b) => (b.runs || 0) - (a.runs || 0),
@@ -507,8 +507,8 @@ const Home = () => {
               <div className="h-px w-24 bg-primary/40 mb-8" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12 justify-items-center mb-24">
-              {mainPlayersListSorted.map((player) => (
-                <PlayerCard key={player._id || player.name} player={player} />
+              {mainPlayersListSorted.map((player, idx) => (
+                <PlayerCard key={player.external_id || player._id || `main-${idx}`} player={player} />
               ))}
             </div>
 
@@ -519,8 +519,8 @@ const Home = () => {
               <div className="h-px w-24 bg-primary/40 mb-8" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12 justify-items-center mb-40">
-              {teamMembersList.map((player) => (
-                <PlayerCard key={player._id || player.name} player={player} />
+              {teamMembersList.map((player, idx) => (
+                <PlayerCard key={player.external_id || player._id || `member-${idx}`} player={player} />
               ))}
             </div>
           </>
