@@ -4,24 +4,53 @@ import Team from '../models/Team.js';
 
 const DAITYA_TEAM_ID = '11183415';
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const REQUEST_DELAY_MS = 1500;
+const FETCH_TIMEOUT_MS = 30000;
+const MAX_MATCH_PAGES = 50;
 
 const BLACKLIST_IDS = ['1', '3', '21556092', '38569177', '14546201'];
 const BLACKLIST_NAMES = ['Vikram Singh', 'Aditya Jethuri', 'Aryan Singh', 'Pranjal', 'Pranjal Rawat', 'Paritosh Dhyani', 'Abhideep Gupta', 'Ujjwal Sati', 'Vaibhav', 'Piyush', 'Piyush ', 'Armaan Rawat', 'Armaan', 'Arman Rawat', 'Gaurav Kothiyal', 'Himanshu Bisht', 'Saksham'];
 
+let lastRequestTime = 0;
+
+async function rateLimit() {
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < REQUEST_DELAY_MS) {
+    await new Promise(r => setTimeout(r, REQUEST_DELAY_MS - elapsed));
+  }
+  lastRequestTime = Date.now();
+}
+
 async function fetchText(url) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT, 'Accept': 'text/html', 'Referer': 'https://cricheroes.com/' }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.text();
+  await rateLimit();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT, 'Accept': 'text/html', 'Referer': 'https://cricheroes.com/' },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return res.text();
+  } catch (e) {
+    clearTimeout(timeoutId);
+    throw e;
+  }
 }
 
 async function fetchJSON(url, retries = 3) {
+  await rateLimit();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json', 'Referer': 'https://cricheroes.com/' }
+        headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json', 'Referer': 'https://cricheroes.com/' },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();

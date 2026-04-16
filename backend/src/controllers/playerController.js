@@ -13,8 +13,22 @@ export const getPlayers = async (req, res) => {
     if (!players || players.length === 0) {
       console.log("No players found in DB, using JSON fallback");
       const dataPath = path.join(__dirname, "../../data/players.json");
-      const rawData = fs.readFileSync(dataPath, "utf-8");
-      const jsonPlayers = JSON.parse(rawData);
+      
+      let rawData;
+      try {
+        rawData = fs.readFileSync(dataPath, "utf-8");
+      } catch (readErr) {
+        console.error("Error reading players.json:", readErr.message);
+        return res.status(500).json({ message: "No players found and fallback data unavailable" });
+      }
+
+      let jsonPlayers;
+      try {
+        jsonPlayers = JSON.parse(rawData);
+      } catch (parseErr) {
+        console.error("Error parsing players.json:", parseErr.message);
+        return res.status(500).json({ message: "Invalid player data format" });
+      }
 
       // Convert to mongoose docs and save to DB
       await Promise.all(

@@ -21,11 +21,16 @@ export const createMatch = async (req, res) => {
       player_performances,
     } = req.body;
 
+    const result_status = result?.toLowerCase().includes('won') ? 'won' 
+      : result?.toLowerCase().includes('lost') ? 'lost' 
+      : result?.toLowerCase().includes('draw') ? 'drawn' 
+      : 'no_result';
+
     // 1. Save the Match document
     const match = new Match({
       date, opponent, ground, city, match_type,
       our_score, opp_score, our_overs, opp_overs,
-      toss, result, insights, highlights, cricheroes_url,
+      toss, result, result_status, insights, highlights, cricheroes_url,
       player_performances: player_performances || [],
     });
     const savedMatch = await match.save();
