@@ -1,9 +1,9 @@
-import connectDB from "../../backend/config/db.js";
+import connectDB from "../../backend/src/config/db.js";
 import {
     createMatch,
     deleteMatch,
     getMatches,
-} from "../../backend/controllers/matchController.js";
+} from "../../backend/src/controllers/matchController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 export default async function handler(req, res) {

@@ -41,6 +41,10 @@
     {
       "source": "/api/team",
       "destination": "/api/team/route.js"
+    },
+    {
+      "source": "/api/auth/login",
+      "destination": "/api/auth/login.js"
     }
   ]
 }

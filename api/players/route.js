@@ -1,10 +1,10 @@
-import connectDB from "../../backend/config/db.js";
+import connectDB from "../../backend/src/config/db.js";
 import {
     createPlayer,
     deletePlayer,
     getPlayers,
     updatePlayer,
-} from "../../backend/controllers/playerController.js";
+} from "../../backend/src/controllers/playerController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 export default async function handler(req, res) {

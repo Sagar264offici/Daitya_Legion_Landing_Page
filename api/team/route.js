@@ -1,5 +1,5 @@
-import connectDB from "../../backend/config/db.js";
-import Team from "../../backend/models/Team.js";
+import connectDB from "../../backend/src/config/db.js";
+import Team from "../../backend/src/models/Team.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
