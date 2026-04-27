@@ -65,15 +65,22 @@ const BatarangEffect = ({ children }) => {
         style={{ willChange: 'transform' }}
       >
         {/* Outer ring */}
-        <div className="w-11 h-11 rounded-full border-2 border-primary flex items-center justify-center relative"
-          style={{ boxShadow: '0 0 14px rgba(239,35,60,0.6), inset 0 0 8px rgba(239,35,60,0.1)' }}>
-          {/* Inner dot */}
-          <div className="absolute w-1.5 h-1.5 rounded-full bg-primary"
-            style={{ boxShadow: '0 0 6px rgba(239,35,60,0.9)' }} />
+        <div
+          className="w-11 h-11 rounded-full flex items-center justify-center relative"
+          style={{
+            border: '2px solid rgba(192,192,192,0.9)',
+            boxShadow: '0 0 12px rgba(192,192,192,0.5), inset 0 0 6px rgba(192,192,192,0.08)'
+          }}
+        >
+          {/* Inner silver dot */}
+          <div
+            className="absolute w-2 h-2 rounded-full"
+            style={{ background: 'rgb(192,192,192)', boxShadow: '0 0 8px rgba(220,220,220,0.9)' }}
+          />
           {/* "DO" text */}
           <span
-            className="text-[7px] font-black text-primary uppercase tracking-[0.15em] leading-none select-none"
-            style={{ marginTop: '1px', letterSpacing: '0.12em' }}
+            className="text-[7px] font-black uppercase leading-none select-none"
+            style={{ color: 'rgba(210,210,210,0.9)', letterSpacing: '0.15em', marginTop: '1px' }}
           >
             DO
           </span>

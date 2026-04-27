@@ -96,7 +96,26 @@
   100% { background-position: 200% 0; }
 }
 
-/* ── Hide default cursor — custom circle cursor takes over ── */
+/* ── Polaroid flash (mobile player tap) ──────────────────── */
+@keyframes fadeInOut {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Player card CSS hover (no framer-motion) ────────────── */
+.card-hover:hover { border-color: rgba(239, 35, 60, 0.3); transform: translateY(-4px); }
+.card-hover:hover .photo-zoom { filter: grayscale(0) contrast(1) brightness(0.95) !important; transform: scale(1.05); }
+
+/* ── Hide default cursor ─────────────────────────────────── */
 @media (hover: hover) {
   *, *::before, *::after { cursor: none !important; }
 }
+
+/* ── Hide scrollbar but allow scroll ─────────────────────── */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
