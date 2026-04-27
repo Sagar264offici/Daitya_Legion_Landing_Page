@@ -21,26 +21,24 @@ const BloodSplatter = ({ x, y, id, onComplete }) => (
 );
 
 // Generate a grid of starting positions that cover the entire viewport
-const generateFloaters = (count = 25) => {
+const generateFloaters = (count = 12) => {
   const floaters = [];
   for (let i = 0; i < count; i++) {
-    // Spread starting positions in a grid-like random pattern
-    const col = i % 5;
-    const row = Math.floor(i / 5);
-    const baseX = (col / 4) * 90 + 5; // 5% to 95% in X
-    const baseY = (row / 4) * 90 + 5; // 5% to 95% in Y
+    const col = i % 4;
+    const row = Math.floor(i / 4);
+    const baseX = (col / 3) * 90 + 5;
+    const baseY = (row / 3) * 90 + 5;
     floaters.push({
       id: i,
-      // Randomize within the cell
-      x: baseX + (Math.random() - 0.5) * 18,
-      y: baseY + (Math.random() - 0.5) * 18,
-      dx: (Math.random() - 0.5) * 40,
-      dy: (Math.random() - 0.5) * 40,
-      duration: 12 + Math.random() * 20,
-      delay: (i / count) * 8 + Math.random() * 3,
-      scale: 0.4 + Math.random() * 1.2,
+      x: baseX + (Math.random() - 0.5) * 20,
+      y: baseY + (Math.random() - 0.5) * 20,
+      dx: (Math.random() - 0.5) * 30,
+      dy: (Math.random() - 0.5) * 30,
+      duration: 15 + Math.random() * 25,
+      delay: i * 0.5,
+      scale: 0.6 + Math.random() * 0.8,
       clockwise: Math.random() > 0.5,
-      opacity: 0.25 + Math.random() * 0.25,
+      opacity: 0.15 + Math.random() * 0.2,
     });
   }
   return floaters;
@@ -50,7 +48,7 @@ const BatarangEffect = ({ children }) => {
   const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
   const [splatters, setSplatters] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
-  const [floaters] = useState(() => generateFloaters(25));
+  const [floaters] = useState(() => generateFloaters(12));
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -58,12 +56,22 @@ const BatarangEffect = ({ children }) => {
     window.addEventListener('resize', checkMobile);
 
     const handleMouseMove = (e) => {
-      if (!isMobile) setMousePos({ x: e.clientX, y: e.clientY });
+      if (!isMobile) {
+        // Throttling mouse move updates to save CPU
+        requestAnimationFrame(() => {
+           setMousePos({ x: e.clientX, y: e.clientY });
+        });
+      }
     };
 
     const handleClick = (e) => {
-      const id = Date.now() + Math.random();
-      setSplatters(prev => [...prev, { id, x: e.clientX, y: e.clientY }]);
+      const id = Date.now();
+      setSplatters(prev => {
+        // Cap splatters at 3 to prevent memory growth
+        const next = [...prev, { id, x: e.clientX, y: e.clientY }];
+        if (next.length > 3) return next.slice(-3);
+        return next;
+      });
     };
 
     window.addEventListener('mousemove', handleMouseMove);

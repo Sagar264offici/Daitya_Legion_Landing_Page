@@ -61,6 +61,15 @@ const Counter = ({ value, title, icon: Icon, color }) => {
   );
 };
 
+const mainPlayerNames = [
+  "bruce wayne",
+  "maithani ashraya",
+  "ansh!",
+  "sagar pathak",
+  "deepak kothiyal",
+  "akshit bisht",
+];
+
 const Home = () => {
   const [players, setPlayers] = useState([]);
   const [teamStats, setTeamStats] = useState(null);
@@ -103,22 +112,22 @@ const Home = () => {
     fetchData();
   }, []);
 
-  const mainPlayerNames = [
-    "bruce wayne",
-    "maithani ashraya",
-    "ansh!",
-    "sagar pathak",
-    "deepak kothiyal",
-    "akshit bisht",
-  ];
+  const mainPlayersListSorted = useMemo(() => {
+    return mainPlayerNames
+      .map((name) => {
+        const target = name.toLowerCase().trim();
+        return players.find((p) => {
+          const pName = p.name?.toLowerCase().trim() || "";
+          return pName === target || pName.includes(target) || target.includes(pName);
+        });
+      })
+      .filter(Boolean);
+  }, [players]);
 
-  const mainPlayersListSorted = mainPlayerNames
-    .map((name) => players.find((p) => p.name?.toLowerCase() === name))
-    .filter(Boolean);
-
-  const teamMembersList = players.filter(
-    (p) => !mainPlayerNames.includes(p.name?.toLowerCase()),
-  );
+  const teamMembersList = useMemo(() => {
+    const mainIds = new Set(mainPlayersListSorted.map(p => p._id));
+    return players.filter(p => !mainIds.has(p._id));
+  }, [players, mainPlayersListSorted]);
 
   return (
     <div className="relative pb-0 overflow-x-hidden bg-[#050505] selection:bg-primary selection:text-white">
