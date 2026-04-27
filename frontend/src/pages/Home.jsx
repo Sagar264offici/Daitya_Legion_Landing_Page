@@ -13,7 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CaptainSection from "../components/CaptainSection.jsx";
 import Footer from "../components/Footer.jsx";
 import Hero from "../components/Hero.jsx";
