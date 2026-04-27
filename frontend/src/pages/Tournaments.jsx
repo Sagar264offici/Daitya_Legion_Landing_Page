@@ -89,7 +89,7 @@ const StarPerformerBadge = ({ performer }) => {
 };
 
 const MatchCard = ({ match, isLatest }) => {
-  const won = match.result === "won";
+  const won = match.result_status === "won" || match.result?.toLowerCase().includes("won");
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

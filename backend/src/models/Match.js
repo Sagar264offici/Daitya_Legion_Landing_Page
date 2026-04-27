@@ -38,7 +38,7 @@ const fowSchema = new mongoose.Schema({
 }, { _id: false });
 
 const matchSchema = new mongoose.Schema({
-  match_id: { type: String, unique: true, sparse: true }, // CricHeroes Match ID
+  match_id: { type: String, index: true }, // CricHeroes Match ID
   date: { type: String, required: true },
   opponent: { type: String, required: true },
   ground: { type: String, default: '' },

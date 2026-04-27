@@ -4,13 +4,10 @@ const playerSchema = new mongoose.Schema(
   {
     external_id: {
       type: String,
-      required: true,
-      unique: true,
       index: true,
     },
     name: {
       type: String,
-      required: true,
     },
     role: {
       type: String,

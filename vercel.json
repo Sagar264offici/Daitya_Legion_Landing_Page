@@ -43,6 +43,14 @@
       "destination": "/api/team/route.js"
     },
     {
+      "source": "/api/tournaments",
+      "destination": "/api/tournaments/route.js"
+    },
+    {
+      "source": "/api/tournaments/:id",
+      "destination": "/api/tournaments/route.js?id=:id"
+    },
+    {
       "source": "/api/auth/login",
       "destination": "/api/auth/login.js"
     }

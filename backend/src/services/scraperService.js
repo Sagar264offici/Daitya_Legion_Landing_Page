@@ -272,6 +272,12 @@ export const scrapePlayers = async (options = {}) => {
   for (const m of filteredMembers) {
     console.log(`\n👤 Processing ${m.name} (${m.external_id})...`);
     try {
+        const playerDoc = await Player.findOne({ external_id: m.external_id });
+        if (playerDoc?.is_manual_override && !force) {
+            console.log(`    ⚠️ Skipping ${m.name} (Manual Override Active)`);
+            continue;
+        }
+
         const statsUrl = `https://cricheroes.com/_next/data/${buildId}/player-profile/${m.external_id}/${m.slug}/stats.json`;
         const statsJson = await fetchJSON(statsUrl);
         const info = statsJson?.pageProps?.playerInfo?.data;

@@ -79,7 +79,8 @@ const Home = () => {
         const playersRaw = await playersRes.json();
         const playersData = Array.isArray(playersRaw) ? playersRaw : [];
         const teamData = await teamRes.json();
-        const tournamentData = Array.isArray(await tournamentRes.json()) ? await tournamentRes.json() : [];
+        const tournamentRaw = await tournamentRes.json();
+        const tournamentData = Array.isArray(tournamentRaw) ? tournamentRaw : [];
 
         const topScorer = [...playersData].sort(
           (a, b) => (b.runs || 0) - (a.runs || 0),

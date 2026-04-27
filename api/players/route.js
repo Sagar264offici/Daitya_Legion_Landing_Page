@@ -13,9 +13,17 @@ export default async function handler(req, res) {
   // GET all players (public)
   if (req.method === "GET") {
     try {
+      // In Vercel serverless, req.query.id is used for /api/players/:id
+      const { id } = req.query;
+      if (id) {
+        const Player = (await import("../../backend/src/models/Player.js")).default;
+        const player = await Player.findById(id);
+        if (player) return res.json(player);
+      }
       return getPlayers(req, res);
     } catch (error) {
-      res.status(500).json({ message: "Server Error" });
+      console.error("Vercel player route error:", error);
+      res.status(500).json({ message: "Server Error", error: error.message });
     }
   }
 

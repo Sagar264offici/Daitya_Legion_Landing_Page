@@ -33,7 +33,7 @@ if (!fs.existsSync(uploadsDir)) {
 const app = express();
 
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
+  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000', 'https://daitya-legion.vercel.app'],
   credentials: true,
   optionsSuccessStatus: 200
 };
