@@ -61,8 +61,9 @@ const Counter = ({ value, title, icon: Icon, color }) => {
   );
 };
 
-// Player names for 'Main Players' section — match against DB names loosely
+// Player keys for 'Main Players' - match by name fragment OR external_id
 const MAIN_PLAYER_KEYS = ["bruce", "ashraya", "ansh", "sagar", "deepak", "akshit"];
+const MAIN_PLAYER_IDS  = ["41232063"]; // Ansh's CricHeroes ID as fallback
 
 const Home = () => {
   const [players, setPlayers] = useState([]);
@@ -110,17 +111,25 @@ const Home = () => {
 
   const mainPlayersListSorted = useMemo(() => {
     if (!players.length) return [];
-    // Match any player whose name contains one of the key fragments
-    const mains = MAIN_PLAYER_KEYS
-      .map(key => players.find(p => p.name?.toLowerCase().includes(key)))
-      .filter(Boolean);
-    // Deduplicate by _id
     const seen = new Set();
-    return mains.filter(p => {
-      if (seen.has(String(p._id))) return false;
-      seen.add(String(p._id));
-      return true;
-    });
+    const mains = [];
+    // Pass 1: match by name fragment
+    for (const key of MAIN_PLAYER_KEYS) {
+      const p = players.find(pl => pl.name?.toLowerCase().includes(key));
+      if (p && !seen.has(String(p._id))) { 
+        seen.add(String(p._id)); 
+        mains.push(p); 
+      }
+    }
+    // Pass 2: match by external_id (ensures Ansh always appears)
+    for (const extId of MAIN_PLAYER_IDS) {
+      const p = players.find(pl => String(pl.external_id) === extId);
+      if (p && !seen.has(String(p._id))) { 
+        seen.add(String(p._id)); 
+        mains.push(p); 
+      }
+    }
+    return mains;
   }, [players]);
 
   const teamMembersList = useMemo(() => {

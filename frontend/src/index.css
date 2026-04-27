@@ -90,9 +90,23 @@
   }
 }
 
-/* ── Gold shimmer for CricHeroes title badges ─────────────── */
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* ── Batarang cursor spin ──────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
+/* ── Mobile batarang float ─────────────────────────────────── */
+@keyframes floatBat {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(30px, -40px) rotate(180deg); }
+  50%  { transform: translate(60px, 10px) rotate(360deg); }
+  75%  { transform: translate(20px, 50px) rotate(540deg); }
+  100% { transform: translate(0, 0) rotate(720deg); }
+}
+
+/* Hide default cursor on desktop when batarang cursor is active */
+@media (hover: hover) {
+  body { cursor: none !important; }
+  a, button, [role="button"] { cursor: none !important; }
+}
