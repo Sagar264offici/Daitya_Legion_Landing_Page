@@ -58,33 +58,25 @@ const BatarangEffect = ({ children }) => {
     <div className="relative min-h-screen">
       {children}
 
-      {/* ── Custom circular cursor ── */}
+      {/* ── Precision crosshair cursor ── */}
       <div
         ref={cursorRef}
         className="fixed top-0 left-0 z-[10001] pointer-events-none select-none"
         style={{ willChange: 'transform' }}
       >
-        {/* Outer ring */}
-        <div
-          className="w-11 h-11 rounded-full flex items-center justify-center relative"
-          style={{
-            border: '2px solid rgba(192,192,192,0.9)',
-            boxShadow: '0 0 12px rgba(192,192,192,0.5), inset 0 0 6px rgba(192,192,192,0.08)'
-          }}
-        >
-          {/* Inner silver dot */}
-          <div
-            className="absolute w-2 h-2 rounded-full"
-            style={{ background: 'rgb(192,192,192)', boxShadow: '0 0 8px rgba(220,220,220,0.9)' }}
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Outer ring */}
+          <circle cx="22" cy="22" r="18" stroke="rgba(220,220,220,0.85)" strokeWidth="1.2"/>
+          {/* Crosshair lines */}
+          <line x1="22" y1="2"  x2="22" y2="10" stroke="rgba(220,220,220,0.7)" strokeWidth="1.2"/>
+          <line x1="22" y1="34" x2="22" y2="42" stroke="rgba(220,220,220,0.7)" strokeWidth="1.2"/>
+          <line x1="2"  y1="22" x2="10" y2="22" stroke="rgba(220,220,220,0.7)" strokeWidth="1.2"/>
+          <line x1="34" y1="22" x2="42" y2="22" stroke="rgba(220,220,220,0.7)" strokeWidth="1.2"/>
+          {/* Center red dot */}
+          <circle cx="22" cy="22" r="2.5" fill="#E63946"
+            style={{ filter: 'drop-shadow(0 0 4px rgba(239,35,60,0.9))' }}
           />
-          {/* "DO" text */}
-          <span
-            className="text-[7px] font-black uppercase leading-none select-none"
-            style={{ color: 'rgba(210,210,210,0.9)', letterSpacing: '0.15em', marginTop: '1px' }}
-          >
-            DO
-          </span>
-        </div>
+        </svg>
       </div>
 
       {/* ── Blood splatters on click ── */}

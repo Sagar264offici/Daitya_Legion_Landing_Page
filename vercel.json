@@ -53,6 +53,10 @@
     {
       "source": "/api/auth/login",
       "destination": "/api/auth/login.js"
+    },
+    {
+      "source": "/api/admin/sync-player",
+      "destination": "/api/admin/sync-player/route.js"
     }
   ]
 }
