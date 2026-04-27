@@ -61,14 +61,8 @@ const Counter = ({ value, title, icon: Icon, color }) => {
   );
 };
 
-const mainPlayerNames = [
-  "bruce wayne",
-  "maithani ashraya",
-  "ansh!",
-  "sagar pathak",
-  "deepak kothiyal",
-  "akshit bisht",
-];
+// Player names for 'Main Players' section — match against DB names loosely
+const MAIN_PLAYER_KEYS = ["bruce", "ashraya", "ansh", "sagar", "deepak", "akshit"];
 
 const Home = () => {
   const [players, setPlayers] = useState([]);
@@ -79,32 +73,34 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [playersRes, teamRes, tournamentRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/players`),
-          fetch(`${API_BASE_URL}/api/team`),
-          fetch(`${API_BASE_URL}/api/tournaments`),
-        ]);
-
+        // Fetch players independently - this MUST succeed
+        const playersRes = await fetch(`${API_BASE_URL}/api/players`);
         const playersRaw = await playersRes.json();
         const playersData = Array.isArray(playersRaw) ? playersRaw : [];
-        const teamData = await teamRes.json();
-        const tournamentRaw = await tournamentRes.json();
-        const tournamentData = Array.isArray(tournamentRaw) ? tournamentRaw : [];
-
-        const topScorer = [...playersData].sort(
-          (a, b) => (b.runs || 0) - (a.runs || 0),
-        )[0];
-        const topWicketer = [...playersData].sort(
-          (a, b) => (b.wickets || 0) - (a.wickets || 0),
-        )[0];
-
         setPlayers(playersData);
-        setTeamStats({ ...teamData, topScorer, topWicketer });
-        if (Array.isArray(tournamentData) && tournamentData.length > 0) {
-          setLatestTournament(tournamentData[0]);
+
+        // Fetch team stats independently (non-critical)
+        try {
+          const teamRes = await fetch(`${API_BASE_URL}/api/team`);
+          const teamData = await teamRes.json();
+          const topScorer = [...playersData].sort((a, b) => (b.runs || 0) - (a.runs || 0))[0];
+          const topWicketer = [...playersData].sort((a, b) => (b.wickets || 0) - (a.wickets || 0))[0];
+          setTeamStats({ ...teamData, topScorer, topWicketer });
+        } catch (e) {
+          console.warn("Team stats fetch failed (non-critical):", e.message);
+        }
+
+        // Fetch tournaments independently (non-critical)
+        try {
+          const tournamentRes = await fetch(`${API_BASE_URL}/api/tournaments`);
+          const tournamentRaw = await tournamentRes.json();
+          const tournamentData = Array.isArray(tournamentRaw) ? tournamentRaw : [];
+          if (tournamentData.length > 0) setLatestTournament(tournamentData[0]);
+        } catch (e) {
+          console.warn("Tournament fetch failed (non-critical):", e.message);
         }
       } catch (error) {
-        console.error("Backend connection failure:", error);
+        console.error("Player fetch failed:", error);
       } finally {
         setLoading(false);
       }
@@ -113,20 +109,23 @@ const Home = () => {
   }, []);
 
   const mainPlayersListSorted = useMemo(() => {
-    return mainPlayerNames
-      .map((name) => {
-        const target = name.toLowerCase().trim();
-        return players.find((p) => {
-          const pName = p.name?.toLowerCase().trim() || "";
-          return pName === target || pName.includes(target) || target.includes(pName);
-        });
-      })
+    if (!players.length) return [];
+    // Match any player whose name contains one of the key fragments
+    const mains = MAIN_PLAYER_KEYS
+      .map(key => players.find(p => p.name?.toLowerCase().includes(key)))
       .filter(Boolean);
+    // Deduplicate by _id
+    const seen = new Set();
+    return mains.filter(p => {
+      if (seen.has(String(p._id))) return false;
+      seen.add(String(p._id));
+      return true;
+    });
   }, [players]);
 
   const teamMembersList = useMemo(() => {
-    const mainIds = new Set(mainPlayersListSorted.map(p => p._id));
-    return players.filter(p => !mainIds.has(p._id));
+    const mainIds = new Set(mainPlayersListSorted.map(p => String(p._id)));
+    return players.filter(p => !mainIds.has(String(p._id)));
   }, [players, mainPlayersListSorted]);
 
   return (
@@ -510,29 +509,41 @@ const Home = () => {
           </div>
         ) : (
           <>
-            <div className="flex flex-col items-center mb-10 text-center w-full mt-4">
-              <h3 className="text-xl sm:text-3xl font-black mb-2 text-white glow-text-primary tracking-tighter italic uppercase">
-                Main Players of the Team
-              </h3>
-              <div className="h-px w-24 bg-primary/40 mb-8" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12 justify-items-center mb-24">
-              {mainPlayersListSorted.map((player, idx) => (
-                <PlayerCard key={player.external_id || player._id || `main-${idx}`} player={player} />
-              ))}
-            </div>
+            {mainPlayersListSorted.length > 0 && (
+              <>
+                <div className="flex flex-col items-center mb-10 text-center w-full mt-4">
+                  <h3 className="text-xl sm:text-3xl font-black mb-2 text-white glow-text-primary tracking-tighter italic uppercase">
+                    Main Players of the Team
+                  </h3>
+                  <div className="h-px w-24 bg-primary/40 mb-8" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12 justify-items-center mb-24">
+                  {mainPlayersListSorted.map((player, idx) => (
+                    <PlayerCard key={player.external_id || player._id || `main-${idx}`} player={player} />
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="flex flex-col items-center mb-10 text-center w-full pt-16 border-t border-white/5">
               <h3 className="text-xl sm:text-3xl font-black mb-2 text-white glow-text-primary tracking-tighter italic uppercase">
-                Team Members
+                {mainPlayersListSorted.length > 0 ? "Team Members" : "Full Squad Roster"}
               </h3>
               <div className="h-px w-24 bg-primary/40 mb-8" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12 justify-items-center mb-40">
-              {teamMembersList.map((player, idx) => (
-                <PlayerCard key={player.external_id || player._id || `member-${idx}`} player={player} />
-              ))}
-            </div>
+
+            {players.length === 0 ? (
+              <div className="flex flex-col items-center py-20 col-span-4">
+                <div className="w-16 h-16 border-4 border-white/5 border-t-primary rounded-full animate-spin mb-6" />
+                <p className="text-gray-700 font-black uppercase tracking-[0.4em] text-[10px]">Loading squad data...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12 justify-items-center mb-40">
+                {(mainPlayersListSorted.length > 0 ? teamMembersList : players).map((player, idx) => (
+                  <PlayerCard key={player.external_id || player._id || `member-${idx}`} player={player} />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
