@@ -13,10 +13,11 @@ import fs from "fs";
 
 dotenv.config();
 
-const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(v => !process.env[v]);
-if (missingEnvVars.length > 0) {
-  console.error(`Missing required env vars: ${missingEnvVars.join(', ')}`);
+const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+const jwtSecret = process.env.JWT_SECRET;
+
+if (!mongoUri || !jwtSecret) {
+  console.error(`Missing required env vars: ${!mongoUri ? 'MONGO_URI/MONGODB_URI ' : ''}${!jwtSecret ? 'JWT_SECRET' : ''}`);
   process.exit(1);
 }
 

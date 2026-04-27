@@ -295,12 +295,26 @@ export const scrapePlayers = async (options = {}) => {
             }
 
             const firstName = m.name.split(' ')[0].toLowerCase();
-            const playerPerf = matchDoc?.player_performances.find(p => p.player_name.toLowerCase().includes(firstName)) || {
-                batting: { runs: 0, balls: 0, fours: 0, sixes: 0, strike_rate: 0, how_out: 'DNB' },
-                bowling: { wickets: 0, overs_bowled: '0', runs_conceded: 0, economy: 0 }
+            const rawPerf = matchDoc?.player_performances.find(p => p.player_name.toLowerCase().includes(firstName));
+            
+            const playerPerf = {
+                batting: { 
+                    runs: rawPerf?.runs || 0, 
+                    balls: rawPerf?.balls || 0, 
+                    fours: rawPerf?.fours || 0, 
+                    sixes: rawPerf?.sixes || 0, 
+                    strike_rate: rawPerf?.strike_rate || 0, 
+                    how_out: rawPerf?.how_out || 'DNB' 
+                },
+                bowling: { 
+                    wickets: rawPerf?.wickets || 0, 
+                    overs: rawPerf?.overs_bowled || '0', 
+                    runs: rawPerf?.runs_conceded || 0, 
+                    economy: rawPerf?.economy || 0 
+                }
             };
 
-            if (playerPerf.batting?.runs > realHighScore) realHighScore = playerPerf.batting.runs;
+            if (playerPerf.batting.runs > realHighScore) realHighScore = playerPerf.batting.runs;
 
             processedHistory.push({
                 match_id: String(mh.match_id),

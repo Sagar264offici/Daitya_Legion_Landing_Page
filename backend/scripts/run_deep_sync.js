@@ -12,12 +12,10 @@ async function run() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('🔗 Connected to MongoDB');
 
-    const targetPlayers = ['41232063', '32875462', '41997128', '43609842']; 
-    console.log(`🚀 Starting Deep Sync for IDs: ${targetPlayers.join(', ')}`);
+    console.log(`🚀 Starting Full Team Deep Sync to fix data structures...`);
 
     await scrapePlayers({ 
-        force: true, 
-        targetPlayers 
+        force: true
     });
 
     console.log('\n✨ Deep Sync completed successfully.');

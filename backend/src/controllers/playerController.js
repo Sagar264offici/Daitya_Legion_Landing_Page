@@ -8,6 +8,13 @@ const __dirname = path.dirname(__filename);
 
 export const getPlayers = async (req, res) => {
   try {
+    const { id } = req.query;
+    if (id) {
+      const player = await Player.findById(id);
+      if (!player) return res.status(404).json({ message: "Player not found" });
+      return res.json(player);
+    }
+
     let players = await Player.find({}).sort({ matches: -1 });
 
     if (!players || players.length === 0) {
