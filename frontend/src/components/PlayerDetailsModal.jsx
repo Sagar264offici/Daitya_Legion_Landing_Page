@@ -5,6 +5,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const cleanName = (name = '') =>
+  name.replace(/_/g, ' ').replace(/[!._]+$/, '').trim();
+
 /* ── Tiny stat cell ────────────────────────────────────────────────────── */
 const Stat = ({ label, value, accent, large, sub }) => (
   <div className={`flex flex-col p-3 border rounded-none ${accent

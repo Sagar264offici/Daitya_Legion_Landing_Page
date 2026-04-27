@@ -63,7 +63,7 @@ const Counter = ({ value, title, icon: Icon, color }) => {
 
 // Player keys for 'Main Players' - match by name fragment OR external_id
 const MAIN_PLAYER_KEYS = ["bruce", "ashraya", "ansh", "sagar", "deepak", "akshit"];
-const MAIN_PLAYER_IDS  = ["11341711", "41232063"]; // Ansh's IDs (new + old fallback)
+const MAIN_PLAYER_IDS  = ["41232063", "41997128", "32875462"]; // Ansh!, Bruce, Ashraya by ID
 
 const Home = () => {
   const [players, setPlayers] = useState([]);

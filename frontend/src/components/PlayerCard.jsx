@@ -3,6 +3,11 @@ import { AnimatePresence } from 'framer-motion';
 import { Trophy, Target, Shield, Crosshair, Activity, Star, Zap, BarChart2, Wind } from 'lucide-react';
 import PlayerDetailsModal from './PlayerDetailsModal.jsx';
 
+// ── Strip CricHeroes special chars from names (e.g. "Ansh!" → "Ansh")
+const cleanName = (name = '') =>
+  name.replace(/_/g, ' ').replace(/[!._]+$/, '').replace(/\.$/, '').trim();
+
+
 // ─── Mobile-only Polaroid Flash ───────────────────────────────────────────────
 const PolaroidFlash = ({ player, onDone }) => {
   return (
@@ -15,15 +20,16 @@ const PolaroidFlash = ({ player, onDone }) => {
       >
         <div className="w-full overflow-hidden" style={{ height: 180 }}>
           <img
-            src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=880808&color=fff&size=200`}
-            alt={player.name}
+            src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`}
+            alt={cleanName(player.name)}
             className="w-full h-full object-cover object-top"
             style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
             referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
           />
         </div>
         <span className="mt-3 text-black font-black uppercase tracking-widest text-[10px] text-center" style={{ fontFamily: 'monospace' }}>
-          {player.name}
+          {cleanName(player.name)}
         </span>
         <span className="text-gray-500 uppercase tracking-widest text-[7px] mt-0.5" style={{ fontFamily: 'monospace' }}>
           DAITYA LEGION
@@ -109,11 +115,12 @@ const PlayerCard = ({ player }) => {
         <div className="relative w-full flex-shrink-0" style={{ height: 220, overflow: 'hidden', background: 'rgba(0,0,0,0.6)' }}>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/20 to-transparent z-10" />
           <img
-            src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=880808&color=fff&size=300`}
-            alt={player.name}
+            src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`}
+            alt={cleanName(player.name)}
             className="w-full h-full object-cover object-top photo-zoom"
             style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.75)', transition: 'filter 0.6s, transform 0.6s' }}
             referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
             loading="lazy"
           />
         </div>
@@ -121,7 +128,7 @@ const PlayerCard = ({ player }) => {
         {/* Identity + Titles */}
         <div className="px-4 pt-2 pb-2 -mt-6 relative z-10">
           <h2 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none truncate">
-            {player.name}
+            {cleanName(player.name)}
           </h2>
 
           {/* Title badges — always visible below name */}
