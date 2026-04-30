@@ -21,12 +21,22 @@
 @layer base {
   body {
     @apply min-h-screen m-0 overflow-x-hidden text-text-main selection:bg-primary selection:text-white;
-    background: radial-gradient(circle at 50% 0%, var(--color-secondary), var(--color-bg-darker));
-    background-attachment: fixed;
+    background-color: var(--color-bg-darker);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 0%, var(--color-secondary), var(--color-bg-darker));
+    z-index: -2;
+    pointer-events: none;
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  body::after {
     content: '';
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -46,7 +56,7 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-premium transition-all duration-300;
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-premium transition-all duration-300;
   }
   
   .glass-panel:hover {
@@ -120,12 +130,14 @@
 }
 
 /* ── Player card CSS hover (no framer-motion) ────────────── */
+.photo-zoom { transform: translateZ(0); will-change: transform, filter; }
 .card-hover:hover { border-color: rgba(239, 35, 60, 0.3); transform: translateY(-4px); }
 .card-hover:hover .photo-zoom { filter: grayscale(0) contrast(1) brightness(0.95) !important; transform: scale(1.05) translateZ(0); }
 
 /* Custom scaling for Sagar's video to remove black borders */
 .sagar-video {
   transform: scale(1.35) translateZ(0);
+  will-change: transform, filter;
   filter: grayscale(1) contrast(1.1) brightness(0.75);
   transition: filter 0.6s, transform 0.6s;
 }
