@@ -30,7 +30,7 @@ const PolaroidFlash = ({ player, onDone }) => {
             <video
               src={customVideoSrc}
               autoPlay loop muted playsInline
-              className={`w-full h-full object-cover object-center ${isSagar ? 'scale-[1.35]' : ''}`}
+              className={`w-full h-full object-cover object-top`}
               style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
             />
           ) : (
@@ -147,7 +147,7 @@ const PlayerCard = ({ player }) => {
               loop
               muted
               playsInline
-              className={`w-full h-full object-cover object-center ${isSagar ? 'sagar-video' : 'photo-zoom'}`}
+              className={`w-full h-full object-cover object-top ${isSagar ? 'sagar-video' : 'photo-zoom'}`}
               style={{ filter: !isSagar ? 'grayscale(1) contrast(1.1) brightness(0.75)' : undefined, transition: !isSagar ? 'filter 0.6s, transform 0.6s' : undefined }}
             />
           ) : (

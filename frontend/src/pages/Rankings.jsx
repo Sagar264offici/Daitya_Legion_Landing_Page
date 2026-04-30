@@ -3,8 +3,19 @@ import { Crosshair, Shield, Target, Waves, Zap, Award, Crown, TrendingUp, Search
 import { API_BASE_URL } from "../config.js";
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
+import SagarVideo from "../assets/Sagar.mp4";
+import AnshVideo from "../assets/gheekhtm.mp4";
+
+// ── Strip CricHeroes special chars from names (e.g. "Ansh!" → "Ansh")
+const cleanName = (name = '') =>
+  name.replace(/_/g, ' ').replace(/[!._]+$/, '').replace(/\.$/, '').trim();
 
 const RankingCard = ({ player, rank, value, label, color, type }) => {
+  const playerNameClean = cleanName(player.name).toLowerCase();
+  const isSagar = playerNameClean.includes('sagar');
+  const isAnsh = playerNameClean.includes('ansh');
+  const customVideoSrc = isSagar ? SagarVideo : (isAnsh ? AnshVideo : null);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -20,12 +31,20 @@ const RankingCard = ({ player, rank, value, label, color, type }) => {
         </div>
         <div className="flex items-center gap-5">
           <div className="w-14 h-14 rounded-sm overflow-hidden border border-white/10 relative flex-shrink-0">
-            <img
-              src={player.image_url || "https://via.placeholder.com/100"}
-              alt=""
-              className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-500"
-              referrerPolicy="no-referrer"
-            />
+            {customVideoSrc ? (
+              <video
+                src={customVideoSrc}
+                autoPlay loop muted playsInline
+                className={`w-full h-full object-cover object-top md:grayscale group-hover:grayscale-0 transition-all duration-500`}
+              />
+            ) : (
+              <img
+                src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=100`}
+                alt=""
+                className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-500"
+                referrerPolicy="no-referrer"
+              />
+            )}
             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
           <div>
