@@ -25,9 +25,9 @@ const PolaroidFlash = ({ player, onDone }) => {
             className="w-full h-full object-cover object-top"
             style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
             referrerPolicy="no-referrer"
-            crossOrigin="anonymous"
             onError={(e) => {
-              e.target.onerror = null;
+              if (e.target.dataset.failed) return;
+              e.target.dataset.failed = 'true';
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`;
             }}
           />
@@ -125,10 +125,10 @@ const PlayerCard = ({ player }) => {
             className="w-full h-full object-cover object-top photo-zoom"
             style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.75)', transition: 'filter 0.6s, transform 0.6s' }}
             referrerPolicy="no-referrer"
-            crossOrigin="anonymous"
             loading="lazy"
             onError={(e) => {
-              e.target.onerror = null;
+              if (e.target.dataset.failed) return;
+              e.target.dataset.failed = 'true';
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`;
             }}
           />

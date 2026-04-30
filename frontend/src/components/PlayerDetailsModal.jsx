@@ -149,7 +149,8 @@ const PlayerDetailsModal = ({ player, onClose }) => {
             className="w-10 h-10 object-cover object-top border border-white/10 flex-shrink-0"
             referrerPolicy="no-referrer"
             onError={(e) => {
-              e.target.onerror = null;
+              if (e.target.dataset.failed) return;
+              e.target.dataset.failed = 'true';
               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=880808&color=fff&size=80`;
             }}
           />

@@ -113,7 +113,7 @@
 
 /* ── Hide default cursor ─────────────────────────────────── */
 @media (hover: hover) {
-  *, *::before, *::after { cursor: none !important; }
+  /* cursor styling removed for better performance and visibility */
 }
 
 /* ── Hide scrollbar but allow scroll ─────────────────────── */
