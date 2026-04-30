@@ -16,7 +16,7 @@ const TRACKS = [
 
 const AudioConsole = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [trackIndex, setTrackIndex] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(() => Math.floor(Math.random() * TRACKS.length));
   const [volume, setVolume] = useState(() => parseInt(localStorage.getItem('daitya_volume') || '50'));
   const [isMuted, setIsMuted] = useState(false);
   const [showTrack, setShowTrack] = useState(false);
@@ -52,13 +52,21 @@ const AudioConsole = () => {
   };
 
   const nextTrack = () => {
-    setTrackIndex((i) => (i + 1) % TRACKS.length);
+    setTrackIndex((i) => {
+      let next = Math.floor(Math.random() * TRACKS.length);
+      if (next === i) next = (next + 1) % TRACKS.length;
+      return next;
+    });
     setShowTrack(true);
     setTimeout(() => setShowTrack(false), 2500);
   };
 
   const prevTrack = () => {
-    setTrackIndex((i) => (i - 1 + TRACKS.length) % TRACKS.length);
+    setTrackIndex((i) => {
+      let prev = Math.floor(Math.random() * TRACKS.length);
+      if (prev === i) prev = (prev - 1 + TRACKS.length) % TRACKS.length;
+      return prev;
+    });
     setShowTrack(true);
     setTimeout(() => setShowTrack(false), 2500);
   };

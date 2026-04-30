@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Target, Activity } from 'lucide-react';
 import TeamLogo from '../assets/Daitya_Legion_LOGO.png';
+import GokuuVideo from '../assets/Gokuu.mp4';
 
 const EntryGate = ({ onEnter }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [statusText, setStatusText] = useState('Initializing Systems...');
   const [showButton, setShowButton] = useState(false);
+  const [isFlashing, setIsFlashing] = useState(false);
+
+  const handleEnterClick = () => {
+    setIsFlashing(true);
+    setTimeout(() => {
+      onEnter();
+    }, 400); // Wait for flash before unmounting
+  };
 
   useEffect(() => {
     const statuses = [
@@ -41,9 +50,30 @@ const EntryGate = ({ onEnter }) => {
 
   return (
     <div className="fixed inset-0 z-[1000] bg-black flex flex-col items-center justify-center overflow-hidden selection:bg-primary selection:text-white">
-      {/* Background Ambience */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(136,8,8,0.15),transparent_70%)]"></div>
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+      {/* Background Video Ambience */}
+      <video
+        src={GokuuVideo}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-50"
+      />
+      <div className="absolute inset-0 bg-black/40"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
+
+      {/* Flash Effect */}
+      <AnimatePresence>
+        {isFlashing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 bg-white z-[2000] pointer-events-none"
+          />
+        )}
+      </AnimatePresence>
 
       <motion.div 
         initial={{ opacity: 0, scale: 0.8 }}
@@ -99,7 +129,7 @@ const EntryGate = ({ onEnter }) => {
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                onClick={onEnter}
+                onClick={handleEnterClick}
                 className="relative group px-14 py-5 bg-primary/10 border-2 border-primary text-white font-black uppercase tracking-[0.35em] text-sm transition-all duration-300 shadow-[0_0_40px_rgba(136,8,8,0.3)] hover:shadow-[0_0_80px_rgba(136,8,8,0.6)] hover:bg-primary overflow-hidden"
                 style={{ clipPath: 'polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%)' }}
               >

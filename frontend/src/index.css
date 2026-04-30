@@ -26,6 +26,16 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url('./assets/5b403ae0afff7-ba04c96046528e59036737402ce10a3c.png') center/30% no-repeat;
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: -1;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight font-black;
     font-family: 'Outfit', sans-serif;

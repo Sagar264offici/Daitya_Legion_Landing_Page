@@ -2,6 +2,8 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Trophy, Target, Shield, Crosshair, Activity, Star, Zap, BarChart2, Wind } from 'lucide-react';
 import PlayerDetailsModal from './PlayerDetailsModal.jsx';
+import SagarVideo from '../assets/Sagar.mp4';
+import AnshVideo from '../assets/gheekhtm.mp4';
 
 // ── Strip CricHeroes special chars from names (e.g. "Ansh!" → "Ansh")
 const cleanName = (name = '') =>
@@ -10,6 +12,11 @@ const cleanName = (name = '') =>
 
 // ─── Mobile-only Polaroid Flash ───────────────────────────────────────────────
 const PolaroidFlash = ({ player, onDone }) => {
+  const playerNameClean = cleanName(player.name).toLowerCase();
+  const isSagar = playerNameClean.includes('sagar');
+  const isAnsh = playerNameClean.includes('ansh');
+  const customVideoSrc = isSagar ? SagarVideo : (isAnsh ? AnshVideo : null);
+
   return (
     <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center pointer-events-none md:hidden"
       style={{ animation: 'fadeInOut 0.9s ease forwards' }}>
@@ -19,18 +26,27 @@ const PolaroidFlash = ({ player, onDone }) => {
         onAnimationEnd={onDone}
       >
         <div className="w-full overflow-hidden" style={{ height: 180 }}>
-          <img
-            src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`}
-            alt={cleanName(player.name)}
-            className="w-full h-full object-cover object-top"
-            style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              if (e.target.dataset.failed) return;
-              e.target.dataset.failed = 'true';
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`;
-            }}
-          />
+          {customVideoSrc ? (
+            <video
+              src={customVideoSrc}
+              autoPlay loop muted playsInline
+              className="w-full h-full object-cover object-top"
+              style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
+            />
+          ) : (
+            <img
+              src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`}
+              alt={cleanName(player.name)}
+              className="w-full h-full object-cover object-top"
+              style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                if (e.target.dataset.failed) return;
+                e.target.dataset.failed = 'true';
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`;
+              }}
+            />
+          )}
         </div>
         <span className="mt-3 text-black font-black uppercase tracking-widest text-[10px] text-center" style={{ fontFamily: 'monospace' }}>
           {cleanName(player.name)}
@@ -57,6 +73,11 @@ const StatBox = ({ label, value, accent }) => (
 const PlayerCard = ({ player }) => {
   const [showModal, setShowModal] = useState(false);
   const [showPolaroid, setShowPolaroid] = useState(false);
+
+  const playerNameClean = cleanName(player.name).toLowerCase();
+  const isSagar = playerNameClean.includes('sagar');
+  const isAnsh = playerNameClean.includes('ansh');
+  const customVideoSrc = isSagar ? SagarVideo : (isAnsh ? AnshVideo : null);
 
   const hs    = player.batting?.high_score ?? 0;
   const avg   = player.batting?.average ? Number(player.batting.average).toFixed(1) : '0.0';
@@ -119,19 +140,31 @@ const PlayerCard = ({ player }) => {
         {/* Photo */}
         <div className="relative w-full flex-shrink-0" style={{ height: 220, overflow: 'hidden', background: 'rgba(0,0,0,0.6)' }}>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/20 to-transparent z-10" />
-          <img
-            src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`}
-            alt={cleanName(player.name)}
-            className="w-full h-full object-cover object-top photo-zoom"
-            style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.75)', transition: 'filter 0.6s, transform 0.6s' }}
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            onError={(e) => {
-              if (e.target.dataset.failed) return;
-              e.target.dataset.failed = 'true';
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`;
-            }}
-          />
+          {customVideoSrc ? (
+            <video
+              src={customVideoSrc}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover object-top photo-zoom"
+              style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.75)', transition: 'filter 0.6s, transform 0.6s' }}
+            />
+          ) : (
+            <img
+              src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`}
+              alt={cleanName(player.name)}
+              className="w-full h-full object-cover object-top photo-zoom"
+              style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.75)', transition: 'filter 0.6s, transform 0.6s' }}
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              onError={(e) => {
+                if (e.target.dataset.failed) return;
+                e.target.dataset.failed = 'true';
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`;
+              }}
+            />
+          )}
         </div>
 
         {/* Identity + Titles */}
