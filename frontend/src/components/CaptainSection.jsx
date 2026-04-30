@@ -11,8 +11,8 @@ const CaptainSection = ({ captain }) => {
     <section className="relative w-full py-20 md:py-40 overflow-hidden bg-[#0a0b10] border-y border-white/5">
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-0 right-0 w-[40%] h-full bg-primary/20 blur-[150px]"></div>
-        <div className="absolute bottom-0 left-0 w-[40%] h-full bg-red-900/10 blur-[150px]"></div>
+        <div className="absolute top-0 right-0 w-[40%] h-full bg-primary/20 blur-[120px]" style={{ transform: 'translateZ(0)' }}></div>
+        <div className="absolute bottom-0 left-0 w-[40%] h-full bg-red-900/10 blur-[120px]" style={{ transform: 'translateZ(0)' }}></div>
       </div>
 
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-10">

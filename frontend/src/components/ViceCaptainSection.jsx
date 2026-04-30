@@ -7,7 +7,6 @@ const ViceCaptainSection = ({ vc }) => {
 
   return (
     <section className="relative w-full py-16 md:py-32 overflow-hidden bg-black border-y border-white/5">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
 
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-10">
         <div className="flex flex-col lg:flex-row-reverse items-center gap-10 md:gap-20">

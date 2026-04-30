@@ -1,27 +1,22 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Crosshair, Shield, Target, Waves, Zap, Award, Crown, TrendingUp, Search, Filter } from "lucide-react";
+import { Crosshair, Shield, Target, Waves, Zap } from "lucide-react";
 import { API_BASE_URL } from "../config.js";
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar.jsx";
-import SagarVideo from "../assets/Sagar.mp4";
-import AnshVideo from "../assets/gheekhtm.mp4";
 
 // ── Strip CricHeroes special chars from names (e.g. "Ansh!" → "Ansh")
 const cleanName = (name = '') =>
   name.replace(/_/g, ' ').replace(/[!._]+$/, '').replace(/\.$/, '').trim();
 
-const RankingCard = ({ player, rank, value, label, color, type }) => {
+const RankingCard = ({ player, rank, value, label, color }) => {
   const playerNameClean = cleanName(player.name).toLowerCase();
-  const isSagar = playerNameClean.includes('sagar');
-  const isAnsh = playerNameClean.includes('ansh');
-  const customVideoSrc = isSagar ? SagarVideo : (isAnsh ? AnshVideo : null);
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="glass-panel p-3 md:p-5 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 group hover:border-primary/60 transition-all border-white/5 bg-[#0a0b10]/40"
+      className="p-3 md:p-5 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 group hover:border-primary/60 transition-colors border border-white/5 bg-[#0a0b10]"
     >
       <div className="flex items-center gap-6">
         <div
@@ -31,20 +26,14 @@ const RankingCard = ({ player, rank, value, label, color, type }) => {
         </div>
         <div className="flex items-center gap-5">
           <div className="w-14 h-14 rounded-sm overflow-hidden border border-white/10 relative flex-shrink-0">
-            {customVideoSrc ? (
-              <video
-                src={customVideoSrc}
-                autoPlay loop muted playsInline
-                className={`w-full h-full object-cover object-top md:grayscale group-hover:grayscale-0 transition-all duration-500`}
-              />
-            ) : (
-              <img
-                src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=100`}
-                alt=""
-                className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-500"
-                referrerPolicy="no-referrer"
-              />
-            )}
+            <img
+              src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=100`}
+              alt=""
+              className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-500"
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              onError={(e) => { if (e.target.dataset.failed) return; e.target.dataset.failed = 'true'; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=100`; }}
+            />
             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
           <div>
@@ -171,11 +160,10 @@ const Rankings = () => {
     <div className="min-h-screen bg-[#050505] pb-32 overflow-x-hidden selection:bg-primary selection:text-white">
       <Navbar />
 
-      {/* Cinematic Overlays */}
+      {/* Background — lightweight, no heavy blurs */}
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-primary/5 rounded-full blur-[200px]"></div>
-        <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-red-900/5 rounded-full blur-[180px]"></div>
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+        <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-primary/4 rounded-full blur-[120px]" style={{ transform: 'translateZ(0)' }}></div>
+        <div className="absolute bottom-0 left-0 w-[30%] h-[30%] bg-red-900/4 rounded-full blur-[100px]" style={{ transform: 'translateZ(0)' }}></div>
       </div>
 
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 pt-24 md:pt-32">

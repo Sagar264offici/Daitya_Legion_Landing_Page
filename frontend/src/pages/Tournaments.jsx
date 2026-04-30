@@ -408,9 +408,8 @@ const Tournaments = () => {
 
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_-10%,#ef233c,transparent_55%)] opacity-10" />
-        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_110%,#7f1d1d,transparent_50%)] opacity-8" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_-10%,#ef233c,transparent_55%)] opacity-[0.07]" style={{ transform: 'translateZ(0)' }} />
+        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_110%,#7f1d1d,transparent_50%)] opacity-[0.06]" style={{ transform: 'translateZ(0)' }} />
       </div>
 
       {/* Hero Banner */}

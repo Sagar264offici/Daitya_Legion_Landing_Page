@@ -7,11 +7,8 @@ const Hero = () => {
     <section className="relative w-full min-h-[95vh] flex flex-col items-center justify-center pt-24 pb-32 overflow-hidden bg-[#050505]">
       {/* Gritty Cinematic Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[180px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-red-900/10 rounded-full blur-[180px]"></div>
-        
-        {/* Grain Overlay */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 mix-blend-overlay"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/15 rounded-full blur-[100px]" style={{ transform: 'translateZ(0)' }}></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-red-900/8 rounded-full blur-[100px]" style={{ transform: 'translateZ(0)' }}></div>
         <div className="absolute inset-0 bg-black/40"></div>
       </div>
 
@@ -24,7 +21,7 @@ const Hero = () => {
         >
           <div className="relative inline-block">
              {/* Bat-Signal Glow */}
-            <div className="absolute inset-0 bg-red-600/40 blur-[100px] animate-glow rounded-full scale-150"></div>
+            <div className="absolute inset-0 bg-red-600/30 blur-[80px] rounded-full scale-150" style={{ transform: 'translateZ(0)' }}></div>
             <motion.img 
               initial={{ scale: 0.5, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
