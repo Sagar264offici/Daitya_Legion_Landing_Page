@@ -54,6 +54,13 @@ async function updateRoster() {
     );
     console.log(`Aarav: Updated ${aaravRes.modifiedCount} records.`);
 
+    // Bruce Wayne: Classicist, Aspirant
+    const bruceRes = await Player.updateMany(
+      { name: /Bruce Wayne/i }, 
+      { $addToSet: { titles: { $each: ['Classicist', 'Aspirant'] } } }
+    );
+    console.log(`Bruce Wayne: Updated ${bruceRes.modifiedCount} records.`);
+
     console.log('\nUpdate Complete!');
     process.exit(0);
   } catch (error) {
