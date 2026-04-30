@@ -34,6 +34,8 @@
     opacity: 0.08;
     pointer-events: none;
     z-index: -1;
+    transform: translateZ(0);
+    will-change: transform;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -119,7 +121,18 @@
 
 /* ── Player card CSS hover (no framer-motion) ────────────── */
 .card-hover:hover { border-color: rgba(239, 35, 60, 0.3); transform: translateY(-4px); }
-.card-hover:hover .photo-zoom { filter: grayscale(0) contrast(1) brightness(0.95) !important; transform: scale(1.05); }
+.card-hover:hover .photo-zoom { filter: grayscale(0) contrast(1) brightness(0.95) !important; transform: scale(1.05) translateZ(0); }
+
+/* Custom scaling for Sagar's video to remove black borders */
+.sagar-video {
+  transform: scale(1.35) translateZ(0);
+  filter: grayscale(1) contrast(1.1) brightness(0.75);
+  transition: filter 0.6s, transform 0.6s;
+}
+.card-hover:hover .sagar-video {
+  transform: scale(1.4) translateZ(0) !important;
+  filter: grayscale(0) contrast(1) brightness(1) !important;
+}
 
 /* ── Hide default cursor ─────────────────────────────────── */
 @media (hover: hover) {
