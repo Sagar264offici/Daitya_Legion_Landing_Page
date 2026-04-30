@@ -26,6 +26,10 @@ const PolaroidFlash = ({ player, onDone }) => {
             style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`;
+            }}
           />
         </div>
         <span className="mt-3 text-black font-black uppercase tracking-widest text-[10px] text-center" style={{ fontFamily: 'monospace' }}>
@@ -91,8 +95,9 @@ const PlayerCard = ({ player }) => {
 
       {/* Card — pure CSS transitions, no framer-motion on hover/scroll */}
       <div
-        className="relative w-full max-w-[320px] flex flex-col bg-[#0a0b10] border border-white/5 shadow-[0_8px_40px_rgba(0,0,0,0.7)] group card-hover"
+        className="relative w-full max-w-[320px] flex flex-col bg-[#0a0b10] border border-white/5 shadow-[0_8px_40px_rgba(0,0,0,0.7)] group card-hover cursor-pointer"
         style={{ transition: 'border-color 0.3s, transform 0.3s' }}
+        onClick={handleClick}
       >
         {/* Top badge row */}
         <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center px-4 pt-3 pointer-events-none">
@@ -122,6 +127,10 @@ const PlayerCard = ({ player }) => {
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
             loading="lazy"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`;
+            }}
           />
         </div>
 

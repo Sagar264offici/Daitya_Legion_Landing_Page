@@ -148,6 +148,10 @@ const PlayerDetailsModal = ({ player, onClose }) => {
             alt={player.name}
             className="w-10 h-10 object-cover object-top border border-white/10 flex-shrink-0"
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=880808&color=fff&size=80`;
+            }}
           />
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-black text-white italic uppercase tracking-tighter leading-none truncate">{player.name}</h2>
