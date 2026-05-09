@@ -15,7 +15,7 @@ const BatarangEffect = ({ children }) => {
         className="fixed bottom-6 right-6 z-[9999] group"
       >
         <a
-          href="https://www.instagram.com/astronomy_with_sagar/"
+          href="https://www.instagram.com/multiverse.sagar/"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-3 bg-black/80 backdrop-blur-md border border-white/15 pr-5 pl-2 py-2 rounded-full hover:border-primary/60 hover:bg-primary/8 transition-all"
