@@ -59,13 +59,23 @@ const Hero = () => {
           className="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto"
         >
           <div className="flex flex-wrap justify-center gap-4 w-full">
-            <button className="btn-premium px-8 sm:px-12 py-5 sm:py-6 group relative overflow-hidden flex-1 min-w-[150px] sm:min-w-[200px]">
-               <span className="relative z-10 text-[11px]"><a href="https://wa.me/918755903705?text=Hello%20Captain%2C%20I%20want%20to%20book%20a%20paid%20match%20with%20Daitya%20Legion." target="_blank" rel="noopener noreferrer">Book Match (Paid)</a></span>
+             <a
+               href="https://wa.me/918755903705?text=Hello%20Captain%2C%20I%20want%20to%20book%20a%20paid%20match%20with%20Daitya%20Legion."
+               target="_blank"
+               rel="noopener noreferrer"
+               className="btn-premium px-8 sm:px-12 py-5 sm:py-6 group relative overflow-hidden flex-1 min-w-[150px] sm:min-w-[200px] flex items-center justify-center"
+             >
+               <span className="relative z-10 text-[11px]">Book Match (Paid)</span>
                <div className="absolute inset-0 bg-primary translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-            </button>
-            <button className="px-8 sm:px-12 py-5 sm:py-6 rounded-sm bg-white/5 border border-white/10 hover:border-primary/50 transition-all text-white font-black uppercase text-[11px] tracking-[0.3em] flex-1 min-w-[150px] sm:min-w-[200px] flex justify-center group">
-               <a href="https://wa.me/918755903705?text=Hello%20Captain%2C%20I%20want%20to%20book%20a%20friendly%20match%20with%20Daitya%20Legion." target="_blank" rel="noopener noreferrer">Book Friendly Match</a>
-            </button>
+             </a>
+             <a
+               href="https://wa.me/918755903705?text=Hello%20Captain%2C%20I%20want%20to%20book%20a%20friendly%20match%20with%20Daitya%20Legion."
+               target="_blank"
+               rel="noopener noreferrer"
+               className="px-8 sm:px-12 py-5 sm:py-6 rounded-sm bg-white/5 border border-white/10 hover:border-primary/50 transition-all text-white font-black uppercase text-[11px] tracking-[0.3em] flex-1 min-w-[150px] sm:min-w-[200px] flex items-center justify-center group"
+             >
+               Book Friendly Match
+             </a>
           </div>
           <p className="text-gray-500 text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] italic mt-4 text-center max-w-lg">
             "You either die a hero or live long enough to see yourself become the villain"

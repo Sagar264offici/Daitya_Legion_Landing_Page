@@ -63,6 +63,15 @@ const matchSchema = new mongoose.Schema({
   // Post-match analysis
   insights: { type: String, default: '' },
   highlights: { type: String, default: '' },
+  player_of_match: { type: String, default: '' },
+  star_performers: [
+    {
+      player_name: { type: String },
+      category: { type: String, enum: ['batting', 'bowling', 'fielding', 'allround'] },
+      performance: { type: String },
+      _id: false,
+    }
+  ],
   
   // CricHeroes Meta
   cricheroes_url: { type: String, default: '' },
