@@ -2,8 +2,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
+  Clapperboard,
   Image as ImageIcon,
   Play,
+  Users,
   Video,
   Volume2,
   VolumeX,
@@ -21,54 +23,72 @@ import Shot1  from "../assets/Team Gallery/Shot1.mp4";
 import Shot2  from "../assets/Team Gallery/Shot2.mp4";
 import Shot3  from "../assets/Team Gallery/Shot3.mp4";
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-const PHOTOS = [
-  { id: "p1", src: Photo1,  label: "Team Moment",  caption: "A candid moment of the squad." },
-  { id: "p2", src: Photo2,  label: "Team Photo",   caption: "The Daitya Legion assembled." },
+// ── Data ──────────────────────────────────────────────────────────────────────
+const TEAM_MOMENTS = [
+  { id: "tm1", type: "photo", src: Photo1, label: "🏏",  caption: "The squad mid-game." },
+  { id: "tm2", type: "photo", src: Photo2, label: "🏏",  caption: "Full team line-up." },
+  { id: "tm3", type: "video", src: Shot3,  label: "🏏",  caption: "Team highlights.", portrait: false },
 ];
 
-const VIDEOS = [
-  { id: "v1", src: Shot1, label: "Shot 1 – Action",   caption: "Full game action reel." },
-  { id: "v2", src: Shot2, label: "Shot 2 – Victory",  caption: "Victory celebration highlights." },
-  { id: "v3", src: Shot3, label: "Shot 3 – Highlight", caption: "Key match highlights." },
+const PLAYER_MOMENTS = [
+  { id: "pm1", type: "video", src: Shot1, label: "🏏", caption: "Raw in-game footage.",  portrait: true },
+  { id: "pm2", type: "video", src: Shot2, label: "🏏", caption: "Player highlights.",    portrait: true },
 ];
 
-// ── Animation variants ────────────────────────────────────────────────────────
+// ── Light animation variants (no heavy spring/scale combos) ───────────────────
+const fadeUp = {
+  hidden:  { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
+  visible: { transition: { staggerChildren: 0.08 } },
 };
-const cardVariants = {
-  hidden: { opacity: 0, y: 50, scale: 0.92 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 70, damping: 16 },
-  },
-};
+
+// ── Video player inside lightbox (self-contained ref so it always plays) ──────
+function LightboxVideo({ src, muted, onCanPlay }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.load();
+    el.play().catch(() => {});
+    return () => { el.pause(); };
+  }, [src]); // re-runs whenever the src changes (new item)
+
+  return (
+    <video
+      ref={ref}
+      src={src}
+      muted={muted}
+      loop
+      playsInline
+      onCanPlay={onCanPlay}
+      style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000" }}
+    />
+  );
+}
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
-  const item   = items[activeIndex];
-  const vRef   = useRef(null);
+  const item = items[activeIndex];
   const [muted, setMuted] = useState(false);
+  const [ready, setReady] = useState(false);
+  const isPortrait = item.type === "video" && item.portrait;
 
+  // Keyboard
   useEffect(() => {
     const h = (e) => {
-      if (e.key === "Escape")      onClose();
-      if (e.key === "ArrowLeft")   onPrev();
-      if (e.key === "ArrowRight")  onNext();
+      if (e.key === "Escape")     onClose();
+      if (e.key === "ArrowLeft")  onPrev();
+      if (e.key === "ArrowRight") onNext();
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose, onPrev, onNext]);
 
-  useEffect(() => {
-    if (!vRef.current) return;
-    vRef.current.load();
-    vRef.current.play().catch(() => {});
-  }, [activeIndex]);
+  useEffect(() => { setReady(false); }, [activeIndex]);
 
   return (
     <motion.div
@@ -76,53 +96,58 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       onClick={onClose}
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/96 backdrop-blur-3xl" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(239,35,60,0.07),transparent_70%)] pointer-events-none" />
+      {/* Backdrop — no backdrop-blur (too GPU-heavy), just dark overlay */}
+      <div className="absolute inset-0 bg-black/95" />
 
-      {/* Content */}
+      {/* Media */}
       <motion.div
         key={item.id}
-        className="relative z-10 flex flex-col items-center max-w-[90vw] max-h-[88vh]"
-        initial={{ scale: 0.78, opacity: 0, y: 30 }}
-        animate={{ scale: 1, opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 18 } }}
-        exit={{ scale: 0.85, opacity: 0 }}
+        className="relative z-10 flex flex-col items-center px-4"
+        style={{ maxWidth: isPortrait ? "380px" : "min(90vw, 960px)", width: "100%" }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.22 }}
         onClick={(e) => e.stopPropagation()}
       >
         {item.type === "photo" ? (
           <img
             src={item.src}
-            alt={item.label}
-            className="max-w-[85vw] max-h-[75vh] object-contain rounded-sm shadow-[0_0_100px_rgba(239,35,60,0.2)]"
+            alt="gallery"
+            style={{ maxWidth: "85vw", maxHeight: "75vh", objectFit: "contain", borderRadius: "2px" }}
           />
         ) : (
-          <div className="relative">
-            <video
-              ref={vRef}
+          <div
+            className="relative w-full rounded-sm overflow-hidden bg-black"
+            style={{ aspectRatio: isPortrait ? "9/16" : "16/9", maxHeight: "75vh" }}
+          >
+            <LightboxVideo
               src={item.src}
               muted={muted}
-              loop
-              playsInline
-              className="max-w-[85vw] max-h-[75vh] rounded-sm shadow-[0_0_100px_rgba(239,35,60,0.2)] object-contain bg-black"
+              onCanPlay={() => setReady(true)}
             />
+            {!ready && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              </div>
+            )}
             <button
               onClick={() => setMuted((m) => !m)}
-              className="absolute bottom-3 right-3 p-2 bg-black/70 border border-white/10 rounded-full hover:border-primary/60 transition-all"
+              className="absolute bottom-3 right-3 p-2 bg-black/70 border border-white/15 rounded-full hover:border-primary/60 transition-colors"
             >
-              {muted
-                ? <VolumeX className="w-4 h-4 text-gray-400" />
-                : <Volume2 className="w-4 h-4 text-primary" />}
+              {muted ? <VolumeX className="w-4 h-4 text-gray-400" /> : <Volume2 className="w-4 h-4 text-primary" />}
             </button>
           </div>
         )}
 
         {/* Caption */}
-        <div className="mt-5 text-center">
-          <p className="text-white font-black uppercase tracking-tight text-sm">{item.label}</p>
+        <div className="mt-4 text-center">
+          <p className="text-2xl">{item.label}</p>
           <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest mt-1">{item.caption}</p>
-          <p className="text-gray-700 text-[9px] font-black uppercase tracking-widest mt-3">
+          <p className="text-gray-700 text-[9px] font-black uppercase tracking-[0.35em] mt-2">
             {activeIndex + 1} / {items.length}
           </p>
         </div>
@@ -133,13 +158,13 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
         <>
           <button
             onClick={(e) => { e.stopPropagation(); onPrev(); }}
-            className="absolute left-4 md:left-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 hover:bg-primary/10 transition-all group"
+            className="absolute left-3 md:left-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 transition-colors group"
           >
             <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onNext(); }}
-            className="absolute right-4 md:right-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 hover:bg-primary/10 transition-all group"
+            className="absolute right-3 md:right-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 transition-colors group"
           >
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
           </button>
@@ -149,7 +174,7 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
       {/* Close */}
       <button
         onClick={onClose}
-        className="absolute top-5 right-5 z-10 p-2.5 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 hover:bg-primary/10 transition-all"
+        className="absolute top-4 right-4 z-10 p-2.5 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 transition-colors"
       >
         <X className="w-5 h-5 text-gray-400 hover:text-primary transition-colors" />
       </button>
@@ -160,78 +185,63 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
 // ── Photo Card ────────────────────────────────────────────────────────────────
 function PhotoCard({ item, onClick }) {
   const [loaded, setLoaded] = useState(false);
-
   return (
     <motion.div
-      variants={cardVariants}
-      className="relative overflow-hidden cursor-pointer group aspect-[4/3] rounded-sm bg-[#0a0b10]"
+      variants={fadeUp}
+      className="relative overflow-hidden cursor-pointer group aspect-[4/3] rounded-sm bg-[#0a0b10] border border-white/5"
       onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 200, damping: 22 }}
     >
-      {/* Skeleton shimmer */}
-      {!loaded && (
-        <div className="absolute inset-0 bg-gradient-to-r from-white/3 via-white/6 to-white/3 animate-pulse" />
-      )}
-
+      {!loaded && <div className="absolute inset-0 bg-white/3 animate-pulse" />}
       <img
         src={item.src}
-        alt={item.label}
+        alt="team photo"
         loading="lazy"
         onLoad={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${loaded ? "opacity-100" : "opacity-0"}`}
       />
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350" />
-
-      {/* Label */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-350">
-        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-primary mb-1">Photo</p>
-        <p className="text-sm font-black text-white uppercase tracking-tight">{item.label}</p>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-250" />
+      <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+        <p className="text-xl">{item.label}</p>
       </div>
-
-      {/* Zoom icon */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none">
-        <div className="p-3 bg-primary/90 rounded-full shadow-[0_0_30px_rgba(239,35,60,0.5)]">
+      {/* Subtle border glow */}
+      <div className="absolute inset-0 border border-transparent group-hover:border-primary/40 transition-colors duration-300 rounded-sm pointer-events-none" />
+      {/* Zoom hint */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-250 pointer-events-none">
+        <div className="p-3 bg-primary/90 rounded-full shadow-[0_0_20px_rgba(239,35,60,0.4)]">
           <ZoomIn className="w-5 h-5 text-white" />
         </div>
       </div>
-
-      {/* Glow border */}
-      <div className="absolute inset-0 border border-primary/0 group-hover:border-primary/50 transition-all duration-350 rounded-sm pointer-events-none" />
     </motion.div>
   );
 }
 
 // ── Video Card ────────────────────────────────────────────────────────────────
 function VideoCard({ item, onClick }) {
-  const vRef = useRef(null);
-  const [hovering, setHovering] = useState(false);
+  const vRef    = useRef(null);
+  const isPortrait = item.portrait;
 
   const handleEnter = () => {
-    setHovering(true);
-    vRef.current?.play().catch(() => {});
+    const el = vRef.current;
+    if (!el) return;
+    if (el.readyState === 0) el.load();
+    el.play().catch(() => {});
   };
   const handleLeave = () => {
-    setHovering(false);
-    if (vRef.current) {
-      vRef.current.pause();
-      vRef.current.currentTime = 0;
-    }
+    const el = vRef.current;
+    if (!el) return;
+    el.pause();
+    el.currentTime = 0;
   };
 
   return (
     <motion.div
-      variants={cardVariants}
-      className="relative overflow-hidden cursor-pointer group aspect-video rounded-sm bg-[#0a0b10] border border-white/5"
+      variants={fadeUp}
+      className="relative overflow-hidden cursor-pointer group rounded-sm bg-[#0a0b10] border border-white/5"
+      style={{ aspectRatio: isPortrait ? "9/16" : "16/9" }}
       onClick={onClick}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 200, damping: 22 }}
     >
-      {/* Video – only loads metadata until hovered */}
       <video
         ref={vRef}
         src={item.src}
@@ -239,54 +249,71 @@ function VideoCard({ item, onClick }) {
         loop
         playsInline
         preload="none"
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: isPortrait ? "contain" : "cover",
+          background: "#000",
+        }}
       />
 
-      {/* Static gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      {/* Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
 
-      {/* Video badge */}
+      {/* Play badge */}
       <div className="absolute top-3 left-3">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/80 border border-primary/30 rounded-sm backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/80 border border-primary/30 rounded-sm">
           <Play className="w-2.5 h-2.5 text-primary fill-primary" />
           <span className="text-[8px] font-black text-primary uppercase tracking-widest">Video</span>
         </div>
       </div>
 
       {/* Bottom label */}
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-primary mb-1">Daitya Legion</p>
-        <p className="text-base font-black text-white uppercase tracking-tight leading-tight">{item.label}</p>
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <p className="text-xl">{item.label}</p>
         <p className="text-[9px] text-gray-500 font-bold mt-1">{item.caption}</p>
       </div>
 
-      {/* Play button on hover */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        animate={{ opacity: hovering ? 1 : 0, scale: hovering ? 1 : 0.7 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="p-5 bg-primary/90 rounded-full shadow-[0_0_50px_rgba(239,35,60,0.6)]">
-          <Play className="w-8 h-8 text-white fill-white" />
+      {/* Play button overlay */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+        <div className="p-4 md:p-5 bg-primary/90 rounded-full shadow-[0_0_40px_rgba(239,35,60,0.55)]">
+          <Play className="w-7 h-7 text-white fill-white" />
         </div>
-      </motion.div>
+      </div>
 
-      {/* Glow border */}
-      <div className="absolute inset-0 border border-primary/0 group-hover:border-primary/50 transition-all duration-350 rounded-sm pointer-events-none" />
+      {/* Border glow */}
+      <div className="absolute inset-0 border border-transparent group-hover:border-primary/40 transition-colors duration-300 rounded-sm pointer-events-none" />
     </motion.div>
+  );
+}
+
+// ── Section heading ───────────────────────────────────────────────────────────
+function SectionHeading({ icon: Icon, title, accent, count, label }) {
+  return (
+    <div className="flex items-center gap-4 mb-10 flex-wrap">
+      <div className="w-1.5 h-12 bg-primary/80 flex-shrink-0" />
+      <div>
+        <h2 className="text-2xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
+          {title} <span className="text-primary not-italic">{accent}</span>
+        </h2>
+        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
+          {count} {label}
+        </span>
+      </div>
+      <div className="ml-auto flex items-center gap-2 px-4 py-2 border border-white/5 bg-[#0a0b10]">
+        <Icon className="w-3.5 h-3.5 text-primary/60" />
+        <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">{title} {accent}</span>
+      </div>
+    </div>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 const Gallery = () => {
-  const [lightbox, setLightbox] = useState(null); // { items, index }
+  const [lightbox, setLightbox] = useState(null);
 
-  const openPhoto = (idx) =>
-    setLightbox({ items: PHOTOS.map((p) => ({ ...p, type: "photo" })), index: idx });
-
-  const openVideo = (idx) =>
-    setLightbox({ items: VIDEOS.map((v) => ({ ...v, type: "video" })), index: idx });
-
+  const openTeam   = (idx) => setLightbox({ items: TEAM_MOMENTS,   index: idx });
+  const openPlayer = (idx) => setLightbox({ items: PLAYER_MOMENTS, index: idx });
   const close = () => setLightbox(null);
   const prev  = () => setLightbox((l) => ({ ...l, index: (l.index - 1 + l.items.length) % l.items.length }));
   const next  = () => setLightbox((l) => ({ ...l, index: (l.index + 1) % l.items.length }));
@@ -297,165 +324,148 @@ const Gallery = () => {
   }, [lightbox]);
 
   return (
-    <div className="min-h-screen bg-[#050505] pb-0 overflow-x-hidden selection:bg-primary selection:text-white">
+    <div className="min-h-screen bg-[#050505] overflow-x-hidden selection:bg-primary selection:text-white">
       <Navbar />
 
-      {/* Fixed background glows */}
-      <div className="fixed inset-0 pointer-events-none -z-10">
-        <div
-          className="absolute top-0 left-0 w-full h-full opacity-[0.06]"
-          style={{ background: "radial-gradient(circle at 30% -10%, #ef233c, transparent 55%)", transform: "translateZ(0)" }}
-        />
-        <div
-          className="absolute bottom-0 right-0 w-full h-full opacity-[0.05]"
-          style={{ background: "radial-gradient(circle at 80% 110%, #7f1d1d, transparent 50%)", transform: "translateZ(0)" }}
-        />
-      </div>
+      {/* Minimal static background — no expensive radial blurs on scroll */}
+      <div className="fixed inset-0 pointer-events-none -z-10"
+        style={{ background: "radial-gradient(circle at 30% 0%, rgba(239,35,60,0.06) 0%, transparent 55%)" }}
+      />
 
-      {/* ── Hero Banner ──────────────────────────────────────────────────────── */}
-      <div className="pt-24 sm:pt-28 md:pt-40 pb-10 sm:pb-16 md:pb-24 px-4 max-w-[1400px] mx-auto">
-        {/* NEW badge */}
+      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      <div className="pt-24 sm:pt-28 md:pt-40 pb-10 sm:pb-16 md:pb-20 px-4 max-w-[1400px] mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-8"
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-3 mb-8 flex-wrap"
         >
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 w-fit">
+          <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20">
             <ImageIcon className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary">
-              Media Vault
-            </span>
+            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary">Media Vault</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-sm shadow-[0_0_20px_rgba(239,35,60,0.4)]">
-            <span className="text-[8px] font-black uppercase tracking-[0.3em]">✦ New Feature</span>
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-primary rounded-sm shadow-[0_0_16px_rgba(239,35,60,0.35)]">
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">✦ New Feature</span>
           </div>
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.05 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.05, duration: 0.4 }}
           className="text-4xl sm:text-6xl md:text-[8rem] lg:text-[11rem] font-black text-white tracking-tighter leading-none italic uppercase mb-4 break-words"
         >
           TEAM{" "}
-          <span className="text-primary not-italic tracking-[0.05em]">GALLERY</span>
+          <span className="text-primary not-italic">GALLERY</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="text-gray-700 font-bold uppercase tracking-[0.5em] text-[10px] mb-16"
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="text-gray-700 font-bold uppercase tracking-[0.5em] text-[10px] mb-12"
         >
           Daitya Legion — Behind the Battles · Unfiltered Moments
         </motion.p>
 
-        {/* Summary counters */}
+        {/* Stats row */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
           {[
-            { label: "Photos",       val: PHOTOS.length, Icon: ImageIcon, color: "text-white" },
-            { label: "Videos",       val: VIDEOS.length, Icon: Video,     color: "text-white" },
-            { label: "Total Media",  val: PHOTOS.length + VIDEOS.length, Icon: Play, color: "text-primary" },
-            { label: "Exclusive",    val: "100%",        Icon: ImageIcon, color: "text-primary" },
-          ].map(({ label, val, Icon, color }) => (
-            <div
-              key={label}
-              className="p-6 bg-[#0a0b10] border border-white/5 hover:border-primary/20 transition-all group"
-            >
+            { label: "Team Moments",  val: TEAM_MOMENTS.length,   Icon: Users },
+            { label: "Player Shots",  val: PLAYER_MOMENTS.length, Icon: Clapperboard },
+            { label: "Total Media",   val: TEAM_MOMENTS.length + PLAYER_MOMENTS.length, Icon: Play },
+            { label: "Exclusive",     val: "100%", Icon: ImageIcon },
+          ].map(({ label, val, Icon }) => (
+            <div key={label} className="p-6 bg-[#0a0b10] border border-white/5 hover:border-primary/20 transition-colors group">
               <Icon className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors mb-3" />
-              <p className={`text-3xl md:text-5xl font-black italic tracking-tighter ${color}`}>{val}</p>
+              <p className="text-3xl md:text-5xl font-black italic tracking-tighter text-white">{val}</p>
               <p className="text-[8px] font-black text-gray-700 uppercase tracking-widest mt-2">{label}</p>
             </div>
           ))}
         </motion.div>
       </div>
 
-      {/* ── PHOTOS SECTION ───────────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 mb-24 md:mb-40">
-        {/* Section heading */}
-        <div className="flex items-center gap-4 mb-10">
-          <div className="w-1.5 h-12 bg-primary/80" />
-          <div>
-            <h2 className="text-2xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
-              Photos <span className="text-primary not-italic">Vault</span>
-            </h2>
-            <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
-              {PHOTOS.length} Exclusive Shots
-            </span>
-          </div>
-          <div className="ml-auto flex items-center gap-2 px-4 py-2 border border-white/5 bg-[#0a0b10]">
-            <ImageIcon className="w-3 h-3 text-primary/60" />
-            <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Photo Gallery</span>
-          </div>
-        </div>
-
+      {/* ── TEAM MOMENTS ─────────────────────────────────────────────────────── */}
+      <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
+        <SectionHeading
+          icon={Users}
+          title="Team"
+          accent="Moments"
+          count={TEAM_MOMENTS.length}
+          label="Group Media"
+        />
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
+          viewport={{ once: true, margin: "-40px" }}
+          className="space-y-5"
         >
-          {PHOTOS.map((p, idx) => (
-            <PhotoCard key={p.id} item={p} onClick={() => openPhoto(idx)} />
+          {/* Photos row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {TEAM_MOMENTS.filter(m => m.type === "photo").map((item) => (
+              <PhotoCard
+                key={item.id}
+                item={item}
+                onClick={() => openTeam(TEAM_MOMENTS.indexOf(item))}
+              />
+            ))}
+          </div>
+          {/* Team video row (full width) */}
+          {TEAM_MOMENTS.filter(m => m.type === "video").map((item) => (
+            <VideoCard
+              key={item.id}
+              item={item}
+              onClick={() => openTeam(TEAM_MOMENTS.indexOf(item))}
+            />
           ))}
         </motion.div>
       </div>
 
-      {/* ── Divider ─────────────────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 mb-24 md:mb-40">
-        <div className="relative flex items-center gap-6">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          <div className="px-6 py-2 border border-primary/20 bg-primary/5 flex items-center gap-2">
+      {/* ── Divider ──────────────────────────────────────────────────────────── */}
+      <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
+        <div className="flex items-center gap-6">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+          <div className="px-5 py-2 border border-primary/20 bg-primary/5 flex items-center gap-2 flex-shrink-0">
             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">
-              Media Vault
-            </span>
+            <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">Daitya Legion</span>
           </div>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
         </div>
       </div>
 
-      {/* ── VIDEOS SECTION ───────────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 pb-24">
-        {/* Section heading */}
-        <div className="flex items-center gap-4 mb-10">
-          <div className="w-1.5 h-12 bg-primary/80" />
-          <div>
-            <h2 className="text-2xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
-              Video <span className="text-primary not-italic">Reels</span>
-            </h2>
-            <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
-              {VIDEOS.length} Exclusive Clips
-            </span>
-          </div>
-          <div className="ml-auto flex items-center gap-2 px-4 py-2 border border-white/5 bg-[#0a0b10]">
-            <Video className="w-3 h-3 text-primary/60" />
-            <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">Video Gallery</span>
-          </div>
-        </div>
-
+      {/* ── PLAYER MOMENTS ───────────────────────────────────────────────────── */}
+      <div className="max-w-[1400px] mx-auto px-4 pb-28">
+        <SectionHeading
+          icon={Clapperboard}
+          title="Player"
+          accent="Moments"
+          count={PLAYER_MOMENTS.length}
+          label="Action Shots"
+        />
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
+          viewport={{ once: true, margin: "-40px" }}
+          className="flex flex-col sm:flex-row gap-5 justify-center"
         >
-          {VIDEOS.map((v, idx) => (
-            <VideoCard key={v.id} item={v} onClick={() => openVideo(idx)} />
+          {PLAYER_MOMENTS.map((item, idx) => (
+            <div key={item.id} className="flex-1" style={{ maxWidth: "420px" }}>
+              <VideoCard item={item} onClick={() => openPlayer(idx)} />
+            </div>
           ))}
         </motion.div>
       </div>
 
       <Footer />
 
-      {/* Lightbox */}
+      {/* ── Lightbox ─────────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {lightbox && (
           <Lightbox
