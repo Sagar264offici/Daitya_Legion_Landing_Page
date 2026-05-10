@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  Clapperboard,
   Image as ImageIcon,
   Play,
   Users,
@@ -12,40 +11,40 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Footer from "../components/Footer.jsx";
 import Navbar from "../components/Navbar.jsx";
 
-// ── Media Imports ─────────────────────────────────────────────────────────────
-import Photo1 from "../assets/Team Gallery/Photo1.jpeg";
-import Photo2 from "../assets/Team Gallery/Photo2.png";
-import Shot1  from "../assets/Team Gallery/Shot1.mp4";
-import Shot2  from "../assets/Team Gallery/Shot2.mp4";
-import Shot3  from "../assets/Team Gallery/Shot3.mp4";
+/* ── Imports ─────────────────────────────────────────────────────────────── */
+import Photo1         from "../assets/Team Gallery/Photo1.jpeg";
+import Photo2         from "../assets/Team Gallery/Photo2.png";
+import Shot1          from "../assets/Team Gallery/Shot1.mp4";
+import Shot2          from "../assets/Team Gallery/Shot2.mp4";
+import Shot3          from "../assets/Team Gallery/Shot3.mp4";
+import TeamMoment1    from "../assets/Team Gallery/Team_moment1.mp4";
+import TeamMoment2    from "../assets/Team Gallery/Team_moment2.webp";
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const TEAM_MOMENTS = [
-  { id: "tm1", type: "photo", src: Photo1, label: "🏏",  caption: "The squad mid-game." },
-  { id: "tm2", type: "photo", src: Photo2, label: "🏏",  caption: "Full team line-up." },
-  { id: "tm3", type: "video", src: Shot3,  label: "🏏",  caption: "Team highlights.", portrait: false },
+/* ── Data ────────────────────────────────────────────────────────────────── */
+// 🖼 Photo Vault  ─ Photo1, Photo2
+const PHOTO_VAULT = [
+  { id: "pv1", type: "image", src: Photo1, caption: "Squad mid-game."      },
+  { id: "pv2", type: "image", src: Photo2, caption: "Full team line-up."   },
 ];
 
-const PLAYER_MOMENTS = [
-  { id: "pm1", type: "video", src: Shot1, label: "🏏", caption: "Raw in-game footage.",  portrait: true },
-  { id: "pm2", type: "video", src: Shot2, label: "🏏", caption: "Player highlights.",    portrait: true },
+// 🎬 Video Vault  ─ Shot1, Shot2, Shot3
+const VIDEO_VAULT = [
+  { id: "vv1", type: "video", src: Shot1, caption: "Raw in-game footage.", portrait: true  },
+  { id: "vv2", type: "video", src: Shot2, caption: "Player highlights.",   portrait: true  },
+  { id: "vv3", type: "video", src: Shot3, caption: "Key match reel.",      portrait: false },
 ];
 
-// ── Light animation variants (no heavy spring/scale combos) ───────────────────
-const fadeUp = {
-  hidden:  { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
-};
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
-};
+// 👥 Team Vault  ─ Team_moment1 (video), Team_moment2 (webp image)
+const TEAM_VAULT = [
+  { id: "tv1", type: "video", src: TeamMoment1, caption: "Team action.",       portrait: false },
+  { id: "tv2", type: "image", src: TeamMoment2, caption: "Team group shot.",   portrait: false },
+];
 
-// ── Video player inside lightbox (self-contained ref so it always plays) ──────
+/* ── Lightbox video (own ref so src always triggers load+play) ───────────── */
 function LightboxVideo({ src, muted, onCanPlay }) {
   const ref = useRef(null);
 
@@ -53,9 +52,10 @@ function LightboxVideo({ src, muted, onCanPlay }) {
     const el = ref.current;
     if (!el) return;
     el.load();
-    el.play().catch(() => {});
-    return () => { el.pause(); };
-  }, [src]); // re-runs whenever the src changes (new item)
+    const p = el.play();
+    if (p) p.catch(() => {});
+    return () => { el.pause(); el.src = ""; el.load(); };
+  }, [src]);
 
   return (
     <video
@@ -70,14 +70,17 @@ function LightboxVideo({ src, muted, onCanPlay }) {
   );
 }
 
-// ── Lightbox ──────────────────────────────────────────────────────────────────
-function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
-  const item = items[activeIndex];
-  const [muted, setMuted] = useState(false);
-  const [ready, setReady] = useState(false);
+/* ── Lightbox ─────────────────────────────────────────────────────────────── */
+function Lightbox({ items, index, onClose, onPrev, onNext }) {
+  const item = items[index];
+  const [muted,  setMuted]  = useState(false);
+  const [ready,  setReady]  = useState(false);
   const isPortrait = item.type === "video" && item.portrait;
 
-  // Keyboard
+  useEffect(() => {
+    setReady(false);
+  }, [index]);
+
   useEffect(() => {
     const h = (e) => {
       if (e.key === "Escape")     onClose();
@@ -88,41 +91,45 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
     return () => window.removeEventListener("keydown", h);
   }, [onClose, onPrev, onNext]);
 
-  useEffect(() => { setReady(false); }, [activeIndex]);
-
   return (
     <motion.div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
       onClick={onClose}
     >
-      {/* Backdrop — no backdrop-blur (too GPU-heavy), just dark overlay */}
-      <div className="absolute inset-0 bg-black/95" />
+      {/* Plain dark overlay — no backdrop-blur (kills performance) */}
+      <div className="absolute inset-0 bg-black/96" />
 
-      {/* Media */}
+      {/* Content */}
       <motion.div
         key={item.id}
-        className="relative z-10 flex flex-col items-center px-4"
-        style={{ maxWidth: isPortrait ? "380px" : "min(90vw, 960px)", width: "100%" }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.22 }}
+        className="relative z-10 flex flex-col items-center px-4 w-full"
+        style={{ maxWidth: isPortrait ? "360px" : "min(92vw, 1000px)" }}
+        initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {item.type === "photo" ? (
+        {/* ── Image ── */}
+        {item.type === "image" && (
           <img
             src={item.src}
             alt="gallery"
-            style={{ maxWidth: "85vw", maxHeight: "75vh", objectFit: "contain", borderRadius: "2px" }}
+            style={{
+              maxWidth: "88vw", maxHeight: "76vh",
+              objectFit: "contain", borderRadius: "2px", display: "block",
+            }}
           />
-        ) : (
+        )}
+
+        {/* ── Video ── */}
+        {item.type === "video" && (
           <div
             className="relative w-full rounded-sm overflow-hidden bg-black"
-            style={{ aspectRatio: isPortrait ? "9/16" : "16/9", maxHeight: "75vh" }}
+            style={{
+              aspectRatio: isPortrait ? "9/16" : "16/9",
+              maxHeight: "76vh",
+            }}
           >
             <LightboxVideo
               src={item.src}
@@ -136,19 +143,21 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
             )}
             <button
               onClick={() => setMuted((m) => !m)}
-              className="absolute bottom-3 right-3 p-2 bg-black/70 border border-white/15 rounded-full hover:border-primary/60 transition-colors"
+              className="absolute bottom-3 right-3 p-2 bg-black/70 border border-white/15 rounded-full hover:border-primary/50 transition-colors"
             >
-              {muted ? <VolumeX className="w-4 h-4 text-gray-400" /> : <Volume2 className="w-4 h-4 text-primary" />}
+              {muted
+                ? <VolumeX className="w-4 h-4 text-gray-400" />
+                : <Volume2 className="w-4 h-4 text-primary" />}
             </button>
           </div>
         )}
 
         {/* Caption */}
-        <div className="mt-4 text-center">
-          <p className="text-2xl">{item.label}</p>
+        <div className="mt-4 text-center select-none">
+          <p className="text-2xl">🏏</p>
           <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest mt-1">{item.caption}</p>
           <p className="text-gray-700 text-[9px] font-black uppercase tracking-[0.35em] mt-2">
-            {activeIndex + 1} / {items.length}
+            {index + 1} / {items.length}
           </p>
         </div>
       </motion.div>
@@ -158,13 +167,13 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
         <>
           <button
             onClick={(e) => { e.stopPropagation(); onPrev(); }}
-            className="absolute left-3 md:left-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 transition-colors group"
+            className="absolute left-3 md:left-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/40 transition-colors group"
           >
             <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onNext(); }}
-            className="absolute right-3 md:right-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 transition-colors group"
+            className="absolute right-3 md:right-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/40 transition-colors group"
           >
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
           </button>
@@ -174,7 +183,7 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
       {/* Close */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2.5 bg-black/60 border border-white/10 rounded-full hover:border-primary/50 transition-colors"
+        className="absolute top-4 right-4 z-10 p-2.5 bg-black/60 border border-white/10 rounded-full hover:border-primary/40 transition-colors"
       >
         <X className="w-5 h-5 text-gray-400 hover:text-primary transition-colors" />
       </button>
@@ -182,65 +191,65 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
   );
 }
 
-// ── Photo Card ────────────────────────────────────────────────────────────────
-function PhotoCard({ item, onClick }) {
+/* ── Image card (lazy, no animation library — pure CSS transitions) ────────── */
+function ImgCard({ item, onClick }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <motion.div
-      variants={fadeUp}
-      className="relative overflow-hidden cursor-pointer group aspect-[4/3] rounded-sm bg-[#0a0b10] border border-white/5"
+    <div
+      className="relative overflow-hidden cursor-pointer group aspect-[4/3] rounded-sm bg-[#0c0c0c] border border-white/5"
       onClick={onClick}
     >
       {!loaded && <div className="absolute inset-0 bg-white/3 animate-pulse" />}
       <img
         src={item.src}
-        alt="team photo"
+        alt="gallery"
         loading="lazy"
         onLoad={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04] ${loaded ? "opacity-100" : "opacity-0"}`}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-250" />
-      <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
-        <p className="text-xl">{item.label}</p>
-      </div>
-      {/* Subtle border glow */}
-      <div className="absolute inset-0 border border-transparent group-hover:border-primary/40 transition-colors duration-300 rounded-sm pointer-events-none" />
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
       {/* Zoom hint */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-250 pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-250 pointer-events-none">
         <div className="p-3 bg-primary/90 rounded-full shadow-[0_0_20px_rgba(239,35,60,0.4)]">
           <ZoomIn className="w-5 h-5 text-white" />
         </div>
       </div>
-    </motion.div>
+      {/* Emoji label */}
+      <div className="absolute bottom-3 left-3 text-xl opacity-0 group-hover:opacity-100 transition-opacity duration-250 select-none">🏏</div>
+      <div className="absolute inset-0 border border-transparent group-hover:border-primary/35 transition-colors duration-300 rounded-sm pointer-events-none" />
+    </div>
   );
 }
 
-// ── Video Card ────────────────────────────────────────────────────────────────
-function VideoCard({ item, onClick }) {
-  const vRef    = useRef(null);
+/* ── Video card (preload="none", plays only on hover) ────────────────────── */
+function VidCard({ item, onClick }) {
+  const vRef = useRef(null);
+  const [hovering, setHovering] = useState(false);
   const isPortrait = item.portrait;
 
-  const handleEnter = () => {
+  const enter = useCallback(() => {
+    setHovering(true);
     const el = vRef.current;
     if (!el) return;
     if (el.readyState === 0) el.load();
     el.play().catch(() => {});
-  };
-  const handleLeave = () => {
+  }, []);
+
+  const leave = useCallback(() => {
+    setHovering(false);
     const el = vRef.current;
     if (!el) return;
     el.pause();
     el.currentTime = 0;
-  };
+  }, []);
 
   return (
-    <motion.div
-      variants={fadeUp}
-      className="relative overflow-hidden cursor-pointer group rounded-sm bg-[#0a0b10] border border-white/5"
+    <div
+      className="relative overflow-hidden cursor-pointer group rounded-sm bg-[#0c0c0c] border border-white/5"
       style={{ aspectRatio: isPortrait ? "9/16" : "16/9" }}
       onClick={onClick}
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
+      onMouseEnter={enter}
+      onMouseLeave={leave}
     >
       <video
         ref={vRef}
@@ -250,45 +259,38 @@ function VideoCard({ item, onClick }) {
         playsInline
         preload="none"
         style={{
-          width: "100%",
-          height: "100%",
+          width: "100%", height: "100%",
           objectFit: isPortrait ? "contain" : "cover",
           background: "#000",
+          transition: "transform 0.45s ease",
+          transform: hovering ? "scale(1.04)" : "scale(1)",
         }}
       />
-
       {/* Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
-
-      {/* Play badge */}
-      <div className="absolute top-3 left-3">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/80 border border-primary/30 rounded-sm">
-          <Play className="w-2.5 h-2.5 text-primary fill-primary" />
-          <span className="text-[8px] font-black text-primary uppercase tracking-widest">Video</span>
-        </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
+      {/* Video badge */}
+      <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-black/80 border border-primary/25 rounded-sm">
+        <Play className="w-2.5 h-2.5 text-primary fill-primary" />
+        <span className="text-[8px] font-black text-primary uppercase tracking-widest">Video</span>
       </div>
-
-      {/* Bottom label */}
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        <p className="text-xl">{item.label}</p>
-        <p className="text-[9px] text-gray-500 font-bold mt-1">{item.caption}</p>
-      </div>
-
-      {/* Play button overlay */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-        <div className="p-4 md:p-5 bg-primary/90 rounded-full shadow-[0_0_40px_rgba(239,35,60,0.55)]">
+      {/* Bottom emoji */}
+      <div className="absolute bottom-3 left-3 text-xl select-none">🏏</div>
+      {/* Play overlay */}
+      <div
+        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        style={{ opacity: hovering ? 1 : 0, transition: "opacity 0.2s" }}
+      >
+        <div className="p-4 bg-primary/90 rounded-full shadow-[0_0_36px_rgba(239,35,60,0.5)]">
           <Play className="w-7 h-7 text-white fill-white" />
         </div>
       </div>
-
-      {/* Border glow */}
-      <div className="absolute inset-0 border border-transparent group-hover:border-primary/40 transition-colors duration-300 rounded-sm pointer-events-none" />
-    </motion.div>
+      <div className="absolute inset-0 border border-transparent group-hover:border-primary/35 transition-colors duration-300 rounded-sm pointer-events-none" />
+    </div>
   );
 }
 
-// ── Section heading ───────────────────────────────────────────────────────────
-function SectionHeading({ icon: Icon, title, accent, count, label }) {
+/* ── Section header ────────────────────────────────────────────────────────── */
+function VaultHeader({ icon: Icon, title, accent, sub }) {
   return (
     <div className="flex items-center gap-4 mb-10 flex-wrap">
       <div className="w-1.5 h-12 bg-primary/80 flex-shrink-0" />
@@ -296,11 +298,9 @@ function SectionHeading({ icon: Icon, title, accent, count, label }) {
         <h2 className="text-2xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
           {title} <span className="text-primary not-italic">{accent}</span>
         </h2>
-        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
-          {count} {label}
-        </span>
+        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">{sub}</span>
       </div>
-      <div className="ml-auto flex items-center gap-2 px-4 py-2 border border-white/5 bg-[#0a0b10]">
+      <div className="ml-auto flex items-center gap-2 px-4 py-2 border border-white/5 bg-[#0c0c0c]">
         <Icon className="w-3.5 h-3.5 text-primary/60" />
         <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">{title} {accent}</span>
       </div>
@@ -308,169 +308,154 @@ function SectionHeading({ icon: Icon, title, accent, count, label }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+function Divider() {
+  return (
+    <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
+      <div className="flex items-center gap-6">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="px-5 py-2 border border-primary/20 bg-primary/5 flex items-center gap-2 flex-shrink-0">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">Daitya Legion</span>
+        </div>
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
 const Gallery = () => {
-  const [lightbox, setLightbox] = useState(null);
+  // lightbox state: null | { items, index }
+  const [lb, setLb] = useState(null);
 
-  const openTeam   = (idx) => setLightbox({ items: TEAM_MOMENTS,   index: idx });
-  const openPlayer = (idx) => setLightbox({ items: PLAYER_MOMENTS, index: idx });
-  const close = () => setLightbox(null);
-  const prev  = () => setLightbox((l) => ({ ...l, index: (l.index - 1 + l.items.length) % l.items.length }));
-  const next  = () => setLightbox((l) => ({ ...l, index: (l.index + 1) % l.items.length }));
+  const open   = (items, idx) => setLb({ items, index: idx });
+  const close  = () => setLb(null);
+  const prev   = () => setLb((l) => ({ ...l, index: (l.index - 1 + l.items.length) % l.items.length }));
+  const next   = () => setLb((l) => ({ ...l, index: (l.index + 1) % l.items.length }));
 
+  // Lock body scroll
   useEffect(() => {
-    document.body.style.overflow = lightbox ? "hidden" : "";
+    document.body.style.overflow = lb ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [lightbox]);
+  }, [lb]);
+
+  const totalMedia = PHOTO_VAULT.length + VIDEO_VAULT.length + TEAM_VAULT.length;
 
   return (
     <div className="min-h-screen bg-[#050505] overflow-x-hidden selection:bg-primary selection:text-white">
       <Navbar />
 
-      {/* Minimal static background — no expensive radial blurs on scroll */}
-      <div className="fixed inset-0 pointer-events-none -z-10"
-        style={{ background: "radial-gradient(circle at 30% 0%, rgba(239,35,60,0.06) 0%, transparent 55%)" }}
+      {/* One static radial glow — no fixed layers, no blur */}
+      <div
+        className="absolute top-0 left-0 w-full h-[600px] pointer-events-none -z-10"
+        style={{ background: "radial-gradient(ellipse 80% 40% at 30% 0%, rgba(239,35,60,0.07), transparent)" }}
       />
 
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <div className="pt-24 sm:pt-28 md:pt-40 pb-10 sm:pb-16 md:pb-20 px-4 max-w-[1400px] mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center gap-3 mb-8 flex-wrap"
-        >
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <div className="pt-24 sm:pt-32 md:pt-44 pb-10 sm:pb-16 md:pb-20 px-4 max-w-[1400px] mx-auto">
+        {/* Badges */}
+        <div className="flex items-center gap-3 mb-8 flex-wrap">
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20">
             <ImageIcon className="w-3.5 h-3.5 text-primary" />
             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary">Media Vault</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-primary rounded-sm shadow-[0_0_16px_rgba(239,35,60,0.35)]">
+          <div className="px-3 py-2 bg-primary rounded-sm shadow-[0_0_14px_rgba(239,35,60,0.3)]">
             <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">✦ New Feature</span>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.05, duration: 0.4 }}
-          className="text-4xl sm:text-6xl md:text-[8rem] lg:text-[11rem] font-black text-white tracking-tighter leading-none italic uppercase mb-4 break-words"
-        >
-          TEAM{" "}
-          <span className="text-primary not-italic">GALLERY</span>
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="text-gray-700 font-bold uppercase tracking-[0.5em] text-[10px] mb-12"
-        >
+        <h1 className="text-4xl sm:text-6xl md:text-[8rem] lg:text-[11rem] font-black text-white tracking-tighter leading-none italic uppercase mb-4 break-words">
+          TEAM <span className="text-primary not-italic">GALLERY</span>
+        </h1>
+        <p className="text-gray-700 font-bold uppercase tracking-[0.5em] text-[10px] mb-12">
           Daitya Legion — Behind the Battles · Unfiltered Moments
-        </motion.p>
+        </p>
 
-        {/* Stats row */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15, duration: 0.4 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Team Moments",  val: TEAM_MOMENTS.length,   Icon: Users },
-            { label: "Player Shots",  val: PLAYER_MOMENTS.length, Icon: Clapperboard },
-            { label: "Total Media",   val: TEAM_MOMENTS.length + PLAYER_MOMENTS.length, Icon: Play },
-            { label: "Exclusive",     val: "100%", Icon: ImageIcon },
+            { label: "Photos",        val: PHOTO_VAULT.length, Icon: ImageIcon },
+            { label: "Player Shots",  val: VIDEO_VAULT.length, Icon: Video     },
+            { label: "Team Moments",  val: TEAM_VAULT.length,  Icon: Users     },
+            { label: "Total Media",   val: totalMedia,          Icon: Play      },
           ].map(({ label, val, Icon }) => (
-            <div key={label} className="p-6 bg-[#0a0b10] border border-white/5 hover:border-primary/20 transition-colors group">
+            <div key={label} className="p-6 bg-[#0c0c0c] border border-white/5 hover:border-primary/20 transition-colors group">
               <Icon className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors mb-3" />
               <p className="text-3xl md:text-5xl font-black italic tracking-tighter text-white">{val}</p>
               <p className="text-[8px] font-black text-gray-700 uppercase tracking-widest mt-2">{label}</p>
             </div>
           ))}
-        </motion.div>
-      </div>
-
-      {/* ── TEAM MOMENTS ─────────────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
-        <SectionHeading
-          icon={Users}
-          title="Team"
-          accent="Moments"
-          count={TEAM_MOMENTS.length}
-          label="Group Media"
-        />
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-40px" }}
-          className="space-y-5"
-        >
-          {/* Photos row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {TEAM_MOMENTS.filter(m => m.type === "photo").map((item) => (
-              <PhotoCard
-                key={item.id}
-                item={item}
-                onClick={() => openTeam(TEAM_MOMENTS.indexOf(item))}
-              />
-            ))}
-          </div>
-          {/* Team video row (full width) */}
-          {TEAM_MOMENTS.filter(m => m.type === "video").map((item) => (
-            <VideoCard
-              key={item.id}
-              item={item}
-              onClick={() => openTeam(TEAM_MOMENTS.indexOf(item))}
-            />
-          ))}
-        </motion.div>
-      </div>
-
-      {/* ── Divider ──────────────────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
-        <div className="flex items-center gap-6">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
-          <div className="px-5 py-2 border border-primary/20 bg-primary/5 flex items-center gap-2 flex-shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">Daitya Legion</span>
-          </div>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
         </div>
       </div>
 
-      {/* ── PLAYER MOMENTS ───────────────────────────────────────────────────── */}
-      <div className="max-w-[1400px] mx-auto px-4 pb-28">
-        <SectionHeading
-          icon={Clapperboard}
-          title="Player"
-          accent="Moments"
-          count={PLAYER_MOMENTS.length}
-          label="Action Shots"
+      {/* ══ PHOTO VAULT ══════════════════════════════════════════════════════ */}
+      <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
+        <VaultHeader
+          icon={ImageIcon}
+          title="Photo"
+          accent="Vault"
+          sub={`${PHOTO_VAULT.length} Exclusive Shots`}
         />
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-40px" }}
-          className="flex flex-col sm:flex-row gap-5 justify-center"
-        >
-          {PLAYER_MOMENTS.map((item, idx) => (
-            <div key={item.id} className="flex-1" style={{ maxWidth: "420px" }}>
-              <VideoCard item={item} onClick={() => openPlayer(idx)} />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {PHOTO_VAULT.map((item, idx) => (
+            <ImgCard key={item.id} item={item} onClick={() => open(PHOTO_VAULT, idx)} />
           ))}
-        </motion.div>
+        </div>
+      </div>
+
+      <Divider />
+
+      {/* ══ VIDEO VAULT ══════════════════════════════════════════════════════ */}
+      <div className="max-w-[1400px] mx-auto px-4 mb-20 md:mb-28">
+        <VaultHeader
+          icon={Video}
+          title="Video"
+          accent="Vault"
+          sub={`${VIDEO_VAULT.length} Action Clips`}
+        />
+        {/* Portrait pair (Shot1 + Shot2) side by side, landscape (Shot3) full width */}
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+            {VIDEO_VAULT.filter(v => v.portrait).map((item, idx) => (
+              <div key={item.id} className="flex-1" style={{ maxWidth: "400px" }}>
+                <VidCard item={item} onClick={() => open(VIDEO_VAULT, VIDEO_VAULT.indexOf(item))} />
+              </div>
+            ))}
+          </div>
+          {VIDEO_VAULT.filter(v => !v.portrait).map((item) => (
+            <VidCard key={item.id} item={item} onClick={() => open(VIDEO_VAULT, VIDEO_VAULT.indexOf(item))} />
+          ))}
+        </div>
+      </div>
+
+      <Divider />
+
+      {/* ══ TEAM VAULT ═══════════════════════════════════════════════════════ */}
+      <div className="max-w-[1400px] mx-auto px-4 pb-28">
+        <VaultHeader
+          icon={Users}
+          title="Team"
+          accent="Vault"
+          sub={`${TEAM_VAULT.length} Group Moments`}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {TEAM_VAULT.map((item, idx) =>
+            item.type === "image"
+              ? <ImgCard key={item.id} item={item} onClick={() => open(TEAM_VAULT, idx)} />
+              : <VidCard key={item.id} item={item} onClick={() => open(TEAM_VAULT, idx)} />
+          )}
+        </div>
       </div>
 
       <Footer />
 
-      {/* ── Lightbox ─────────────────────────────────────────────────────────── */}
+      {/* ── Lightbox ─────────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {lightbox && (
+        {lb && (
           <Lightbox
-            items={lightbox.items}
-            activeIndex={lightbox.index}
+            items={lb.items}
+            index={lb.index}
             onClose={close}
             onPrev={prev}
             onNext={next}
