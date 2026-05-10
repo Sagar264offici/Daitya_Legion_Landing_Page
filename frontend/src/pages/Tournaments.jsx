@@ -1,8 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
-  Award,
-  Calendar,
   ChevronRight,
   ExternalLink,
   Shield,
@@ -89,7 +87,9 @@ const StarPerformerBadge = ({ performer }) => {
 };
 
 const MatchCard = ({ match, isLatest }) => {
-  const won = match.result_status === "won" || match.result?.toLowerCase().includes("won");
+  const won =
+    match.result_status === "won" ||
+    match.result?.toLowerCase().includes("won");
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -350,31 +350,30 @@ const TournamentCard = ({ tournament, index }) => {
                 <Shield className="w-3.5 h-3.5" />
                 Tournament Matches
               </h4>
-              {[...tournament.matches]
-                .reverse()
-                .map((match, i) => (
-                  <MatchCard
-                    key={match.match_id || i}
-                    match={match}
-                    isLatest={i === 0}
-                  />
-                ))}
+              {[...tournament.matches].reverse().map((match, i) => (
+                <MatchCard
+                  key={match.match_id || i}
+                  match={match}
+                  isLatest={i === 0}
+                />
+              ))}
             </div>
           </motion.div>
         )}
-        {expanded && (!tournament.matches || tournament.matches.length === 0) && (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="border-t border-white/5 p-10 text-center"
-          >
-            <p className="text-gray-700 font-black uppercase tracking-widest text-[9px]">
-              Match data coming soon...
-            </p>
-          </motion.div>
-        )}
+        {expanded &&
+          (!tournament.matches || tournament.matches.length === 0) && (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="border-t border-white/5 p-10 text-center"
+            >
+              <p className="text-gray-700 font-black uppercase tracking-widest text-[9px]">
+                Match data coming soon...
+              </p>
+            </motion.div>
+          )}
       </AnimatePresence>
     </motion.div>
   );
@@ -398,9 +397,13 @@ const Tournaments = () => {
       });
   }, []);
 
-  const totalMatches = tournaments.reduce((a, t) => a + (t.matches_played || 0), 0);
+  const totalMatches = tournaments.reduce(
+    (a, t) => a + (t.matches_played || 0),
+    0,
+  );
   const totalWins = tournaments.reduce((a, t) => a + (t.wins || 0), 0);
-  const overallWR = totalMatches > 0 ? Math.round((totalWins / totalMatches) * 100) : 0;
+  const overallWR =
+    totalMatches > 0 ? Math.round((totalWins / totalMatches) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-[#050505] pb-0 overflow-x-hidden selection:bg-primary selection:text-white">
@@ -408,8 +411,14 @@ const Tournaments = () => {
 
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_-10%,#ef233c,transparent_55%)] opacity-[0.07]" style={{ transform: 'translateZ(0)' }} />
-        <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_110%,#7f1d1d,transparent_50%)] opacity-[0.06]" style={{ transform: 'translateZ(0)' }} />
+        <div
+          className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_-10%,#ef233c,transparent_55%)] opacity-[0.07]"
+          style={{ transform: "translateZ(0)" }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_110%,#7f1d1d,transparent_50%)] opacity-[0.06]"
+          style={{ transform: "translateZ(0)" }}
+        />
       </div>
 
       {/* Hero Banner */}
@@ -432,7 +441,9 @@ const Tournaments = () => {
           className="text-4xl sm:text-6xl md:text-[8rem] lg:text-[11rem] font-black text-white glow-text-primary tracking-tighter leading-none italic uppercase mb-4 break-words"
         >
           TOURNA
-          <span className="text-primary not-italic tracking-[0.05em]">MENTS</span>
+          <span className="text-primary not-italic tracking-[0.05em]">
+            MENTS
+          </span>
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -452,17 +463,39 @@ const Tournaments = () => {
             className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20"
           >
             {[
-              { label: "Tournaments", val: tournaments.length, color: "text-white", Icon: Trophy },
-              { label: "Matches Played", val: totalMatches, color: "text-white", Icon: Activity },
-              { label: "Wins", val: totalWins, color: "text-green-400", Icon: Shield },
-              { label: "Win Rate", val: `${overallWR}%`, color: "text-primary", Icon: Zap },
+              {
+                label: "Tournaments",
+                val: tournaments.length,
+                color: "text-white",
+                Icon: Trophy,
+              },
+              {
+                label: "Matches Played",
+                val: totalMatches,
+                color: "text-white",
+                Icon: Activity,
+              },
+              {
+                label: "Wins",
+                val: totalWins,
+                color: "text-green-400",
+                Icon: Shield,
+              },
+              {
+                label: "Win Rate",
+                val: `${overallWR}%`,
+                color: "text-primary",
+                Icon: Zap,
+              },
             ].map(({ label, val, color, Icon }) => (
               <div
                 key={label}
                 className="p-6 bg-[#0a0b10] border border-white/5 hover:border-primary/20 transition-all group"
               >
                 <Icon className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors mb-3" />
-                <p className={`text-3xl md:text-5xl font-black italic tracking-tighter ${color}`}>
+                <p
+                  className={`text-3xl md:text-5xl font-black italic tracking-tighter ${color}`}
+                >
                   {val}
                 </p>
                 <p className="text-[8px] font-black text-gray-700 uppercase tracking-widest mt-2">
@@ -476,6 +509,7 @@ const Tournaments = () => {
 
       {/* Tournament List */}
       <div className="max-w-[1400px] mx-auto px-4 pb-0">
+        {/* Performance + visibility: render only first N tournaments initially */}
         <div className="flex items-center gap-4 mb-10">
           <div className="w-1.5 h-12 bg-primary/80" />
           <div>
@@ -504,9 +538,19 @@ const Tournaments = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {tournaments.map((t, i) => (
+            {tournaments.slice(0, 3).map((t, i) => (
               <TournamentCard key={t._id} tournament={t} index={i} />
             ))}
+            {tournaments.length > 3 && (
+              <div className="mt-6 py-8 text-center border border-white/5 bg-[#0a0b10]">
+                <p className="text-gray-700 font-black uppercase tracking-widest text-[9px]">
+                  Showing first 3 tournaments (performance mode)
+                </p>
+                <p className="text-[9px] text-gray-600 mt-2">
+                  Expand “View Matches” inside each card to see match details.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
