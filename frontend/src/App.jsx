@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './pages/Home.jsx';
 import Rankings from './pages/Rankings.jsx';
 import Tournaments from './pages/Tournaments.jsx';
+import Gallery from './pages/Gallery.jsx';
 import AdminLogin from './pages/AdminLogin.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import BatarangEffect from './components/BatarangEffect.jsx';
@@ -44,6 +45,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/rankings" element={<Rankings />} />
                     <Route path="/tournaments" element={<Tournaments />} />
+                    <Route path="/gallery" element={<Gallery />} />
                   </Routes>
                 </div>
               </BatarangEffect>

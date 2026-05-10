@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Home, Medal, Menu, X } from 'lucide-react';
+import { Trophy, Home, Medal, Camera, Menu, X } from 'lucide-react';
 import AudioConsole from './AudioConsole.jsx';
 
 const Navbar = () => {
@@ -29,9 +29,10 @@ const Navbar = () => {
   useEffect(() => { setMobileMenuOpen(false); }, [location]);
 
   const navItems = [
-    { name: 'Base', path: '/', icon: Home },
-    { name: 'Rankings', path: '/rankings', icon: Trophy },
-    { name: 'Tournaments', path: '/tournaments', icon: Medal },
+    { name: 'Base',        path: '/',            icon: Home   },
+    { name: 'Rankings',   path: '/rankings',    icon: Trophy },
+    { name: 'Tournaments',path: '/tournaments', icon: Medal  },
+    { name: 'Gallery',    path: '/gallery',     icon: Camera },
   ];
 
   return (
