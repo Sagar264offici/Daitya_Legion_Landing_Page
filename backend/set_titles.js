@@ -1,11 +1,34 @@
 import mongoose from 'mongoose';
-import Player from './models/Player.js';
+import dotenv from 'dotenv';
+import Player from './src/models/Player.js';
+
+dotenv.config();
 
 async function run() {
-  await mongoose.connect('mongodb+srv://nooneisusingthismail_db_user:cMHPAJMlm863rVKL@cluster0.nemhgne.mongodb.net/daitya');
+  const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+  if (!uri) throw new Error('MONGO_URI or MONGODB_URI is required');
 
-  // Titles updated successfully!
-  console.log("Titles updated successfully!");
-  process.exit(0);
+  await mongoose.connect(uri);
+
+  const player = await Player.findOneAndUpdate(
+    {
+      $or: [
+        { external_id: '41644117' },
+        { name: { $regex: /^Sagar Pathak$/i } },
+      ],
+    },
+    { $addToSet: { titles: 'Aspirant' } },
+    { returnDocument: 'after' },
+  );
+
+  if (!player) throw new Error('Sagar Pathak not found');
+
+  console.log(`Updated ${player.name} titles: ${(player.titles || []).join(', ')}`);
+  await mongoose.disconnect();
 }
-run();
+
+run().catch(async (error) => {
+  console.error(error.message);
+  await mongoose.disconnect().catch(() => {});
+  process.exit(1);
+});
