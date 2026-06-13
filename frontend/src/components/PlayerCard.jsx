@@ -157,6 +157,7 @@ const PlayerCard = ({ player }) => {
     "deepak kothiyal": ["Classicist"],
     aarav: ["Steady Batter", "Aspirant"],
     aman: ["Classicist", "Aspirant"],
+    "sagar pathak": ["Aspirant"],
     "aaroosh pandey": ["Accumulator"],
   };
 
