@@ -16,16 +16,20 @@ const RankingCard = ({ player, rank, value, label, color }) => {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.05 }}
-      className="p-3 md:p-5 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 group hover:border-primary/60 transition-colors border border-white/5 bg-[#0a0b10]"
+      className="p-3 md:p-5 flex flex-row items-center justify-between gap-3 group hover:border-primary/60 transition-colors border border-white/5 bg-[#0a0b10]"
     >
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 md:gap-6 min-w-0">
         <div
-          className={`w-12 h-12 rounded-sm flex items-center justify-center font-black ${rank === 0 ? "bg-primary text-white shadow-[0_0_25px_rgba(239,35,60,0.5)] rotate-45" : "bg-white/5 text-gray-500 border border-white/10"}`}
+          className={`w-8 h-8 md:w-12 md:h-12 rounded-sm flex items-center justify-center font-black flex-shrink-0 ${
+            rank === 0 
+              ? "bg-primary text-white shadow-[0_0_20px_rgba(239,35,60,0.5)] rotate-45" 
+              : "bg-white/5 text-gray-500 border border-white/10"
+          }`}
         >
-          <span className={rank === 0 ? "-rotate-45" : ""}>{rank + 1}</span>
+          <span className={`text-xs md:text-base ${rank === 0 ? "-rotate-45" : ""}`}>{rank + 1}</span>
         </div>
-        <div className="flex items-center gap-5">
-          <div className="w-14 h-14 rounded-sm overflow-hidden border border-white/10 relative flex-shrink-0">
+        <div className="flex items-center gap-3 md:gap-5 min-w-0">
+          <div className="w-10 h-10 md:w-14 md:h-14 rounded-sm overflow-hidden border border-white/10 relative flex-shrink-0">
             <img
               src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=100`}
               alt=""
@@ -36,32 +40,32 @@ const RankingCard = ({ player, rank, value, label, color }) => {
             />
             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
-          <div>
-            <h4 className="text-xl font-black text-white group-hover:text-primary transition-colors tracking-tighter uppercase italic">
+          <div className="min-w-0">
+            <h4 className="text-sm xs:text-base md:text-xl font-black text-white group-hover:text-primary transition-colors tracking-tighter uppercase italic truncate">
               {player.name}
             </h4>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-[7px] md:text-[9px] font-black text-gray-600 uppercase tracking-widest">
                 {player.role}
               </span>
               <div className="w-1 h-1 rounded-full bg-gray-800"></div>
-              <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest animate-pulse">
+              <span className="text-[7px] md:text-[9px] font-black text-primary/60 uppercase tracking-widest animate-pulse">
                 Synced
               </span>
             </div>
           </div>
         </div>
       </div>
-      <div className="text-center sm:text-right w-full sm:w-auto">
-        <div className="flex flex-col items-center sm:items-end">
+      <div className="text-right flex-shrink-0">
+        <div className="flex flex-col items-end">
           <span
-            className={`text-4xl font-black ${color} tracking-tighter glow-text-primary`}
+            className={`text-2xl xs:text-3xl md:text-4xl font-black ${color} tracking-tighter glow-text-primary leading-none`}
           >
             {value}
           </span>
-          <div className="flex items-center gap-1.5 mt-1">
+          <div className="flex items-center gap-1 mt-1">
             <Crosshair className="w-2.5 h-2.5 text-gray-700" />
-            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">
+            <span className="text-[7px] md:text-[9px] font-black text-gray-500 uppercase tracking-widest block leading-none">
               {label}
             </span>
           </div>
@@ -180,28 +184,32 @@ const Rankings = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-7xl lg:text-[10rem] font-black text-white glow-text-primary tracking-tighter leading-none italic uppercase"
+            className="text-3xl xs:text-5xl md:text-7xl lg:text-[10rem] font-black text-white glow-text-primary tracking-tighter leading-none italic uppercase"
           >
             PLAYER{" "}
             <span className="text-primary not-italic tracking-[0.1em] sm:tracking-[0.15em] ml-2 sm:ml-4 font-black">
               RANKINGS
             </span>
           </motion.h1>
-          <p className="text-gray-700 font-bold uppercase tracking-[0.6em] text-[10px] mt-4">
+          <p className="text-gray-700 font-bold uppercase tracking-[0.6em] text-[9px] md:text-[10px] mt-4 text-center">
             Season Performance Leaderboard
           </p>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-10 md:mb-20">
+        <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2 md:gap-4 mb-10 md:mb-20">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-4 px-4 py-3 md:px-10 md:py-5 rounded-sm text-[8px] md:text-[10px] whitespace-nowrap flex-1 md:flex-none justify-center font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group ${activeTab === tab.id ? "bg-primary text-white shadow-[0_0_40px_rgba(239,35,60,0.4)]" : "bg-[#0a0b10] text-gray-600 border border-white/5 hover:border-primary/30 active:scale-95"}`}
+              className={`flex items-center gap-2 md:gap-4 px-3 py-3 md:px-10 md:py-5 rounded-sm text-[8px] md:text-[10px] whitespace-nowrap justify-center font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group ${
+                activeTab === tab.id 
+                  ? "bg-primary text-white shadow-[0_0_40px_rgba(239,35,60,0.4)]" 
+                  : "bg-[#0a0b10] text-gray-600 border border-white/5 hover:border-primary/30 active:scale-95"
+              }`}
             >
               <tab.icon
-                className={`w-4 h-4 relative z-10 ${activeTab === tab.id ? "text-white" : tab.color}`}
+                className={`w-3.5 h-3.5 md:w-4 md:h-4 relative z-10 ${activeTab === tab.id ? "text-white" : tab.color}`}
               />
               <span className="relative z-10">{tab.label}</span>
             </button>
@@ -310,10 +318,10 @@ const Rankings = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-12"
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12"
                 >
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 mb-8 border-l-4 border-primary pl-6">
+                  <div className="space-y-3 md:space-y-6">
+                    <div className="flex items-center gap-3 mb-4 md:mb-8 border-l-4 border-primary pl-4 md:pl-6">
                       <h3 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter text-center md:text-left">
                         Catches <br />
                         <span className="text-[10px] tracking-[0.4em] not-italic text-gray-700 font-black">
@@ -332,8 +340,8 @@ const Rankings = () => {
                       />
                     ))}
                   </div>
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 mb-8 border-l-4 border-red-950 pl-6 text-center sm:text-right w-full sm:w-auto justify-end md:text-left md:justify-start">
+                  <div className="space-y-3 md:space-y-6">
+                    <div className="flex items-center gap-3 mb-4 md:mb-8 border-l-4 border-red-950 pl-4 md:pl-6">
                       <h3 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter text-center md:text-left">
                         Run Outs <br />
                         <span className="text-[10px] tracking-[0.4em] not-italic text-gray-700 font-black">

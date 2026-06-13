@@ -139,33 +139,50 @@ export async function fetchMatchDetails(matchId, buildId, teamASlug, teamBSlug) 
     });
 
     const performances = [];
+    const getOrCreatePerformance = (name) => {
+      let p = performances.find(x => x.player_name === name);
+      if (!p) {
+        p = {
+          player_id: null,
+          player_name: name,
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          strike_rate: 0,
+          how_out: 'DNB',
+          wickets: 0,
+          overs_bowled: '0',
+          runs_conceded: 0,
+          economy: 0
+        };
+        performances.push(p);
+      }
+      return p;
+    };
+
     scorecard.forEach(inning => {
+      const isDaitya = String(inning.team_id) === DAITYA_TEAM_ID;
+      
+      if (isDaitya) {
         (inning.batting || []).forEach(b => {
-             performances.push({
-                player_id: null,
-                player_name: b.name,
-                runs: parseInt(b.runs) || 0,
-                balls: parseInt(b.balls) || 0,
-                fours: parseInt(b['4s']) || 0,
-                sixes: parseInt(b['6s']) || 0,
-                strike_rate: parseFloat(b.SR) || 0,
-                how_out: b.how_to_out || 'DNB'
-             });
+          const p = getOrCreatePerformance(b.name);
+          p.runs = parseInt(b.runs) || 0;
+          p.balls = parseInt(b.balls) || 0;
+          p.fours = parseInt(b['4s']) || 0;
+          p.sixes = parseInt(b['6s']) || 0;
+          p.strike_rate = parseFloat(b.SR) || 0;
+          p.how_out = b.how_to_out || 'DNB';
         });
+      } else {
         (inning.bowling || []).forEach(bw => {
-            const existing = performances.find(p => p.player_name === bw.name);
-            const bowlerData = {
-                wickets: parseInt(bw.wickets) || 0,
-                overs_bowled: bw.overs || '0',
-                runs_conceded: parseInt(bw.runs) || 0,
-                economy: parseFloat(bw.economy_rate) || 0
-            };
-            if (existing) {
-                Object.assign(existing, bowlerData);
-            } else {
-                performances.push({ player_name: bw.name, ...bowlerData });
-            }
+          const p = getOrCreatePerformance(bw.name);
+          p.wickets = parseInt(bw.wickets) || 0;
+          p.overs_bowled = bw.overs || '0';
+          p.runs_conceded = parseInt(bw.runs) || 0;
+          p.economy = parseFloat(bw.economy_rate) || 0;
         });
+      }
     });
 
     return {
@@ -300,8 +317,10 @@ export const scrapePlayers = async (options = {}) => {
                 }
             }
 
-            const firstName = m.name.split(' ')[0].toLowerCase();
-            const rawPerf = matchDoc?.player_performances.find(p => p.player_name.toLowerCase().includes(firstName));
+            const cleanString = (str) => (str || '').replace(/_/g, ' ').replace(/[!._]+$/, '').trim().toLowerCase();
+            const cleanPlayerName = cleanString(m.name);
+            const firstName = cleanPlayerName.split(' ')[0];
+            const rawPerf = matchDoc?.player_performances.find(p => cleanString(p.player_name).includes(firstName));
             
             const playerPerf = {
                 batting: { 

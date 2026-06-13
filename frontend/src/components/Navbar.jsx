@@ -98,38 +98,48 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile: nav links + hamburger */}
-          <div className="flex md:hidden items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`relative flex items-center gap-1 px-2 py-2 rounded-sm text-[9px] font-black uppercase tracking-[0.1em] transition-all ${location.pathname === item.path ? 'text-primary' : 'text-gray-500'}`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="hidden xs:inline">{item.name}</span>
-              </Link>
-            ))}
+          {/* Mobile: hamburger only */}
+          <div className="flex md:hidden items-center">
             <button
               onClick={() => setMobileMenuOpen((p) => !p)}
-              className="ml-1 w-8 h-8 flex items-center justify-center text-gray-500 hover:text-primary transition-colors"
+              className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-primary transition-colors focus:outline-none"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </nav>
-
+ 
       {/* Mobile slide-down menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="fixed top-[60px] left-0 right-0 z-[99] bg-black/95 border-b border-white/5 backdrop-blur-3xl md:hidden px-4 py-4"
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-[60px] sm:top-[80px] left-0 right-0 z-[99] bg-black/95 border-b border-white/5 backdrop-blur-3xl md:hidden px-6 py-8 flex flex-col gap-6"
           >
-            <AudioConsole />
+            <div className="flex flex-col gap-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-4 px-5 py-3.5 rounded-sm text-xs font-black uppercase tracking-[0.2em] transition-all ${
+                    location.pathname === item.path 
+                      ? 'text-white bg-primary/10 border-l-2 border-primary' 
+                      : 'text-gray-500 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <item.icon className={`w-4 h-4 ${location.pathname === item.path ? 'text-primary' : 'text-gray-500'}`} />
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </div>
+            <div className="h-px bg-white/5" />
+            <div className="flex justify-center py-2">
+              <AudioConsole />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
