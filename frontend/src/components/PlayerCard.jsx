@@ -1,57 +1,90 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Trophy, Target, Shield, Crosshair, Activity, Star, Zap, BarChart2, Wind } from 'lucide-react';
-import PlayerDetailsModal from './PlayerDetailsModal.jsx';
-import SagarVideo from '../assets/Sagar.mp4';
-import AnshVideo from '../assets/gheekhtm.mp4';
+import { AnimatePresence } from "framer-motion";
+import {
+  Activity,
+  BarChart2,
+  Crosshair,
+  Shield,
+  Star,
+  Trophy,
+  Wind,
+} from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import SagarVideo from "../assets/Sagar.mp4";
+import AnshVideo from "../assets/gheekhtm.mp4";
+import PlayerDetailsModal from "./PlayerDetailsModal.jsx";
 
 // ── Strip CricHeroes special chars from names (e.g. "Ansh!" → "Ansh")
-const cleanName = (name = '') =>
-  name.replace(/_/g, ' ').replace(/[!._]+$/, '').replace(/\.$/, '').trim();
-
+const cleanName = (name = "") =>
+  name
+    .replace(/_/g, " ")
+    .replace(/[!._]+$/, "")
+    .replace(/\.$/, "")
+    .trim();
 
 // ─── Mobile-only Polaroid Flash ───────────────────────────────────────────────
 const PolaroidFlash = ({ player, onDone }) => {
   const playerNameClean = cleanName(player.name).toLowerCase();
-  const isSagar = playerNameClean.includes('sagar');
-  const isAnsh = playerNameClean.includes('ansh');
-  const customVideoSrc = isSagar ? SagarVideo : (isAnsh ? AnshVideo : null);
+  const isSagar = playerNameClean.includes("sagar");
+  const isAnsh = playerNameClean.includes("ansh");
+  const customVideoSrc = isSagar ? SagarVideo : isAnsh ? AnshVideo : null;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center pointer-events-none md:hidden"
-      style={{ animation: 'fadeInOut 0.9s ease forwards' }}>
+    <div
+      className="fixed inset-0 z-[99999] flex flex-col items-center justify-center pointer-events-none md:hidden"
+      style={{ animation: "fadeInOut 0.9s ease forwards" }}
+    >
       <div
         className="bg-white shadow-[0_20px_60px_rgba(0,0,0,0.9)] flex flex-col items-center"
-        style={{ width: 200, padding: '10px 10px 36px 10px', animation: 'slideUp 0.55s ease 0.2s both' }}
+        style={{
+          width: 200,
+          padding: "10px 10px 36px 10px",
+          animation: "slideUp 0.55s ease 0.2s both",
+        }}
         onAnimationEnd={onDone}
       >
         <div className="w-full overflow-hidden" style={{ height: 180 }}>
           {customVideoSrc ? (
             <video
               src={customVideoSrc}
-              autoPlay loop muted playsInline
+              autoPlay
+              loop
+              muted
+              playsInline
               className={`w-full h-full object-cover object-top`}
-              style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
+              style={{
+                filter: "grayscale(100%) contrast(1.2) brightness(0.85)",
+              }}
             />
           ) : (
             <img
-              src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`}
+              src={
+                player.image_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`
+              }
               alt={cleanName(player.name)}
               className="w-full h-full object-cover object-top"
-              style={{ filter: 'grayscale(100%) contrast(1.2) brightness(0.85)' }}
+              style={{
+                filter: "grayscale(100%) contrast(1.2) brightness(0.85)",
+              }}
               referrerPolicy="no-referrer"
               onError={(e) => {
                 if (e.target.dataset.failed) return;
-                e.target.dataset.failed = 'true';
+                e.target.dataset.failed = "true";
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=200`;
               }}
             />
           )}
         </div>
-        <span className="mt-3 text-black font-black uppercase tracking-widest text-[10px] text-center" style={{ fontFamily: 'monospace' }}>
+        <span
+          className="mt-3 text-black font-black uppercase tracking-widest text-[10px] text-center"
+          style={{ fontFamily: "monospace" }}
+        >
           {cleanName(player.name)}
         </span>
-        <span className="text-gray-500 uppercase tracking-widest text-[7px] mt-0.5" style={{ fontFamily: 'monospace' }}>
+        <span
+          className="text-gray-500 uppercase tracking-widest text-[7px] mt-0.5"
+          style={{ fontFamily: "monospace" }}
+        >
           DAITYA LEGION
         </span>
       </div>
@@ -60,12 +93,20 @@ const PolaroidFlash = ({ player, onDone }) => {
 };
 
 const StatBox = ({ label, value, accent }) => (
-  <div className={`flex flex-col p-2.5 border transition-colors ${accent
-    ? 'bg-primary/8 border-primary/25 hover:border-primary/45'
-    : 'bg-white/4 border-white/6 hover:border-white/16'}`}>
-    <span className="text-[7px] font-black uppercase tracking-widest text-gray-600 mb-1 leading-none">{label}</span>
-    <span className={`text-base font-black italic tracking-tighter leading-none ${accent ? 'text-primary' : 'text-white'}`}>
-      {value ?? '—'}
+  <div
+    className={`flex flex-col p-2.5 border transition-colors ${
+      accent
+        ? "bg-primary/8 border-primary/25 hover:border-primary/45"
+        : "bg-white/4 border-white/6 hover:border-white/16"
+    }`}
+  >
+    <span className="text-[7px] font-black uppercase tracking-widest text-gray-600 mb-1 leading-none">
+      {label}
+    </span>
+    <span
+      className={`text-base font-black italic tracking-tighter leading-none ${accent ? "text-primary" : "text-white"}`}
+    >
+      {value ?? "—"}
     </span>
   </div>
 );
@@ -75,24 +116,30 @@ const PlayerCard = ({ player }) => {
   const [showPolaroid, setShowPolaroid] = useState(false);
 
   const playerNameClean = cleanName(player.name).toLowerCase();
-  const isSagar = playerNameClean.includes('sagar');
-  const isAnsh = playerNameClean.includes('ansh');
-  const customVideoSrc = isSagar ? SagarVideo : (isAnsh ? AnshVideo : null);
+  const isSagar = playerNameClean.includes("sagar");
+  const isAnsh = playerNameClean.includes("ansh");
+  const customVideoSrc = isSagar ? SagarVideo : isAnsh ? AnshVideo : null;
 
-  const hs    = player.batting?.high_score ?? 0;
-  const avg   = player.batting?.average ? Number(player.batting.average).toFixed(1) : '0.0';
-  const sr    = player.batting?.strike_rate ? Number(player.batting.strike_rate).toFixed(1) : '0.0';
-  const econ  = player.bowling?.economy ? Number(player.bowling.economy).toFixed(1) : '—';
-  const bb    = player.bowling?.best_bowling || '—';
-  const wkts  = player.bowling?.wickets ?? player.wickets ?? 0;
-  const runs  = player.batting?.total_runs ?? player.runs ?? 0;
-  const mtch  = player.matches ?? 0;
-  const motm  = player.man_of_the_match ?? 0;
+  const hs = player.batting?.high_score ?? 0;
+  const avg = player.batting?.average
+    ? Number(player.batting.average).toFixed(1)
+    : "0.0";
+  const sr = player.batting?.strike_rate
+    ? Number(player.batting.strike_rate).toFixed(1)
+    : "0.0";
+  const econ = player.bowling?.economy
+    ? Number(player.bowling.economy).toFixed(1)
+    : "—";
+  const bb = player.bowling?.best_bowling || "—";
+  const wkts = player.bowling?.wickets ?? player.wickets ?? 0;
+  const runs = player.batting?.total_runs ?? player.runs ?? 0;
+  const mtch = player.matches ?? 0;
+  const motm = player.man_of_the_match ?? 0;
   const fours = player.batting?.fours ?? 0;
   const sixes = player.batting?.sixes ?? 0;
-  const catches  = player.catches ?? 0;
-  const runOuts  = player.run_outs ?? 0;
-  const fifties  = player.batting?.fifties ?? 0;
+  const catches = player.catches ?? 0;
+  const runOuts = player.run_outs ?? 0;
+  const fifties = player.batting?.fifties ?? 0;
   const hundreds = player.batting?.hundreds ?? 0;
 
   const handleClick = useCallback(() => {
@@ -103,12 +150,33 @@ const PlayerCard = ({ player }) => {
     }
   }, []);
 
-  // Normalize titles: accept array, comma-separated string, or missing
+  const TITLE_FALLBACKS = {
+    "maithani ashraya": ["Steady Batter", "Aspirant"],
+    "bruce wayne": ["Classicist", "Aspirant"],
+    ansh: ["Classicist", "Aspirant"],
+    "deepak kothiyal": ["Classicist"],
+    aarav: ["Steady Batter", "Aspirant"],
+    aman: ["Classicist", "Aspirant"],
+    "aaroosh pandey": ["Accumulator"],
+  };
+
+  // Normalize titles: accept array, comma-separated string, or missing.
+  // Fall back to a small local map when the API returns no titles.
   const titles = useMemo(() => {
     if (!player) return [];
-    if (Array.isArray(player.titles)) return player.titles.filter(Boolean);
-    if (typeof player.titles === 'string') return player.titles.split(',').map(t => t.trim()).filter(Boolean);
-    return [];
+    const normalizedName = cleanName(player.name).toLowerCase();
+    let rawTitles = [];
+    if (Array.isArray(player.titles)) {
+      rawTitles = player.titles.filter(Boolean);
+    } else if (typeof player.titles === "string") {
+      rawTitles = player.titles
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+    return rawTitles.length > 0
+      ? rawTitles
+      : TITLE_FALLBACKS[normalizedName] || [];
   }, [player]);
 
   return (
@@ -117,7 +185,10 @@ const PlayerCard = ({ player }) => {
         {showPolaroid && (
           <PolaroidFlash
             player={player}
-            onDone={() => { setShowPolaroid(false); setShowModal(true); }}
+            onDone={() => {
+              setShowPolaroid(false);
+              setShowModal(true);
+            }}
           />
         )}
       </AnimatePresence>
@@ -125,20 +196,26 @@ const PlayerCard = ({ player }) => {
       {/* Card — pure CSS transitions, no framer-motion on hover/scroll */}
       <div
         className="relative w-full max-w-[320px] flex flex-col bg-[#0a0b10] border border-white/5 shadow-[0_8px_40px_rgba(0,0,0,0.7)] group card-hover cursor-pointer"
-        style={{ transition: 'border-color 0.3s, transform 0.3s' }}
+        style={{ transition: "border-color 0.3s, transform 0.3s" }}
         onClick={handleClick}
       >
         {/* Top badge row */}
         <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center px-4 pt-3 pointer-events-none">
           <div className="flex flex-col">
-            <span className="text-[8px] font-black uppercase text-primary tracking-[0.3em] leading-none">Daitya</span>
-            <span className="text-[7px] font-black uppercase text-gray-600 tracking-widest">Legion</span>
+            <span className="text-[8px] font-black uppercase text-primary tracking-[0.3em] leading-none">
+              Daitya
+            </span>
+            <span className="text-[7px] font-black uppercase text-gray-600 tracking-widest">
+              Legion
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             {motm > 0 && (
               <div className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/20 px-1.5 py-0.5">
                 <Star className="w-2.5 h-2.5 text-yellow-400" />
-                <span className="text-[7px] font-black text-yellow-400">{motm} MOM</span>
+                <span className="text-[7px] font-black text-yellow-400">
+                  {motm} MOM
+                </span>
               </div>
             )}
             <Shield className="w-3.5 h-3.5 text-white/20" />
@@ -146,7 +223,14 @@ const PlayerCard = ({ player }) => {
         </div>
 
         {/* Photo */}
-        <div className="relative w-full flex-shrink-0" style={{ height: 220, overflow: 'hidden', background: 'rgba(0,0,0,0.6)' }}>
+        <div
+          className="relative w-full flex-shrink-0"
+          style={{
+            height: 220,
+            overflow: "hidden",
+            background: "rgba(0,0,0,0.6)",
+          }}
+        >
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-[#0a0b10]/20 to-transparent z-10" />
           {customVideoSrc ? (
             <video
@@ -155,20 +239,33 @@ const PlayerCard = ({ player }) => {
               loop
               muted
               playsInline
-              className={`w-full h-full object-cover object-top ${isSagar ? 'sagar-video' : 'photo-zoom'}`}
-              style={{ filter: !isSagar ? 'grayscale(1) contrast(1.1) brightness(0.75)' : undefined, transition: !isSagar ? 'filter 0.6s, transform 0.6s' : undefined }}
+              className={`w-full h-full object-cover object-top ${isSagar ? "sagar-video" : "photo-zoom"}`}
+              style={{
+                filter: !isSagar
+                  ? "grayscale(1) contrast(1.1) brightness(0.75)"
+                  : undefined,
+                transition: !isSagar
+                  ? "filter 0.6s, transform 0.6s"
+                  : undefined,
+              }}
             />
           ) : (
             <img
-              src={player.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`}
+              src={
+                player.image_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`
+              }
               alt={cleanName(player.name)}
               className="w-full h-full object-cover object-top photo-zoom"
-              style={{ filter: 'grayscale(1) contrast(1.1) brightness(0.75)', transition: 'filter 0.6s, transform 0.6s' }}
+              style={{
+                filter: "grayscale(1) contrast(1.1) brightness(0.75)",
+                transition: "filter 0.6s, transform 0.6s",
+              }}
               referrerPolicy="no-referrer"
               loading="lazy"
               onError={(e) => {
                 if (e.target.dataset.failed) return;
-                e.target.dataset.failed = 'true';
+                e.target.dataset.failed = "true";
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName(player.name))}&background=880808&color=fff&size=300`;
               }}
             />
@@ -185,9 +282,14 @@ const PlayerCard = ({ player }) => {
           {titles.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5 mb-1">
               {titles.map((t, i) => (
-                <div key={i} className="flex items-center gap-1 px-2 py-1 border border-yellow-500/40 bg-yellow-500/8">
+                <div
+                  key={i}
+                  className="flex items-center gap-1 px-2 py-1 border border-yellow-500/40 bg-yellow-500/8"
+                >
                   <Trophy className="w-2.5 h-2.5 text-yellow-400 flex-shrink-0" />
-                  <span className="text-[7px] font-black uppercase tracking-widest text-yellow-400 leading-none">{t}</span>
+                  <span className="text-[7px] font-black uppercase tracking-widest text-yellow-400 leading-none">
+                    {t}
+                  </span>
                 </div>
               ))}
             </div>
@@ -195,9 +297,12 @@ const PlayerCard = ({ player }) => {
 
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/15 border border-primary/25 text-[8px] font-black text-primary uppercase tracking-widest">
-              <Crosshair className="w-2 h-2" />{player.role || 'Player'}
+              <Crosshair className="w-2 h-2" />
+              {player.role || "Player"}
             </span>
-            <span className="text-[7px] text-gray-600 font-black uppercase tracking-widest">{mtch} Matches</span>
+            <span className="text-[7px] text-gray-600 font-black uppercase tracking-widest">
+              {mtch} Matches
+            </span>
           </div>
         </div>
 
@@ -213,9 +318,19 @@ const PlayerCard = ({ player }) => {
 
         {/* Boundary bar */}
         <div className="px-4 pb-2 grid grid-cols-4 gap-1">
-          {[['4s', fours, 'text-white'], ['6s', sixes, 'text-yellow-400'], ['50s', fifties, 'text-white'], ['100s', hundreds, 'text-primary']].map(([lbl, val, cls]) => (
-            <div key={lbl} className="flex flex-col items-center bg-white/3 border border-white/5 py-1.5">
-              <span className="text-[6px] font-black text-gray-700 uppercase tracking-widest">{lbl}</span>
+          {[
+            ["4s", fours, "text-white"],
+            ["6s", sixes, "text-yellow-400"],
+            ["50s", fifties, "text-white"],
+            ["100s", hundreds, "text-primary"],
+          ].map(([lbl, val, cls]) => (
+            <div
+              key={lbl}
+              className="flex flex-col items-center bg-white/3 border border-white/5 py-1.5"
+            >
+              <span className="text-[6px] font-black text-gray-700 uppercase tracking-widest">
+                {lbl}
+              </span>
               <span className={`text-sm font-black italic ${cls}`}>{val}</span>
             </div>
           ))}
@@ -225,15 +340,19 @@ const PlayerCard = ({ player }) => {
         <div className="px-4 pb-3 flex gap-1.5">
           <div className="flex-1 flex justify-between items-center bg-red-950/15 border border-red-900/20 px-2 py-1.5">
             <span className="text-[7px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1">
-              <Wind className="w-2 h-2" />Best
+              <Wind className="w-2 h-2" />
+              Best
             </span>
             <span className="text-sm font-black text-red-400 italic">{bb}</span>
           </div>
           <div className="flex-1 flex justify-between items-center bg-white/3 border border-white/5 px-2 py-1.5">
             <span className="text-[7px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1">
-              <BarChart2 className="w-2 h-2" />Field
+              <BarChart2 className="w-2 h-2" />
+              Field
             </span>
-            <span className="text-sm font-black text-gray-300 italic">{catches}C/{runOuts}RO</span>
+            <span className="text-sm font-black text-gray-300 italic">
+              {catches}C/{runOuts}RO
+            </span>
           </div>
         </div>
 
@@ -242,7 +361,7 @@ const PlayerCard = ({ player }) => {
           <button
             onClick={handleClick}
             className="w-full py-3 bg-transparent border border-white/10 text-gray-500 text-[9px] font-black uppercase tracking-[0.4em] hover:bg-primary hover:text-white hover:border-primary flex items-center justify-center gap-2"
-            style={{ transition: 'all 0.25s' }}
+            style={{ transition: "all 0.25s" }}
           >
             <Activity className="w-3 h-3" />
             Full Career Stats
@@ -250,13 +369,18 @@ const PlayerCard = ({ player }) => {
         </div>
 
         {/* Hover accent */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary scale-x-0 group-hover:scale-x-100"
-          style={{ transition: 'transform 0.4s', transformOrigin: 'left' }} />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary scale-x-0 group-hover:scale-x-100"
+          style={{ transition: "transform 0.4s", transformOrigin: "left" }}
+        />
       </div>
 
       <AnimatePresence>
         {showModal && (
-          <PlayerDetailsModal player={player} onClose={() => setShowModal(false)} />
+          <PlayerDetailsModal
+            player={player}
+            onClose={() => setShowModal(false)}
+          />
         )}
       </AnimatePresence>
     </>
