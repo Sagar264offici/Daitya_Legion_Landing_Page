@@ -1,21 +1,59 @@
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Volume2,
+    VolumeX,
+    X,
+    ZoomIn,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Play, ZoomIn, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 
 // ── Media imports ─────────────────────────────────────────────────────────────
 import Photo1 from "../assets/Team Gallery/Photo1.jpeg";
 import Photo2 from "../assets/Team Gallery/Photo2.png";
-import Shot1  from "../assets/Team Gallery/Shot1.mp4";
-import Shot2  from "../assets/Team Gallery/Shot2.mp4";
-import Shot3  from "../assets/Team Gallery/Shot3.mp4";
+import Shot1 from "../assets/Team Gallery/Shot1.mp4";
+import Shot2 from "../assets/Team Gallery/Shot2.mp4";
+import TeamMoment1 from "../assets/Team Gallery/Team_moment1.mp4";
 
 // ── Gallery data ──────────────────────────────────────────────────────────────
 const GALLERY_ITEMS = [
-  { id: 1, type: "image", src: Photo1,  label: "Team Moment",       span: "col-span-1 row-span-2" },
-  { id: 2, type: "video", src: Shot3,   label: "Shot 3 – Highlight", span: "col-span-1 row-span-1" },
-  { id: 3, type: "image", src: Photo2,  label: "Team Photo",        span: "col-span-1 row-span-1" },
-  { id: 4, type: "video", src: Shot1,   label: "Shot 1 – Action",   span: "col-span-2 row-span-2" },
-  { id: 5, type: "video", src: Shot2,   label: "Shot 2 – Victory",  span: "col-span-1 row-span-1" },
+  {
+    id: 1,
+    type: "image",
+    src: Photo1,
+    label: "Team Moment",
+    span: "col-span-1 row-span-2",
+  },
+  {
+    id: 2,
+    type: "video",
+    src: TeamMoment1,
+    label: "Team Moment – Highlight",
+    span: "col-span-1 row-span-1",
+  },
+  {
+    id: 3,
+    type: "image",
+    src: Photo2,
+    label: "Team Photo",
+    span: "col-span-1 row-span-1",
+  },
+  {
+    id: 4,
+    type: "video",
+    src: Shot1,
+    label: "Shot 1 – Action",
+    span: "col-span-2 row-span-2",
+  },
+  {
+    id: 5,
+    type: "video",
+    src: Shot2,
+    label: "Shot 2 – Victory",
+    span: "col-span-1 row-span-1",
+  },
 ];
 
 // ── Stagger container ─────────────────────────────────────────────────────────
@@ -81,7 +119,12 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
           key={`lb-${activeIndex}`}
           className="relative z-10 max-w-[90vw] max-h-[85vh] flex flex-col items-center"
           initial={{ scale: 0.75, opacity: 0, y: 40 }}
-          animate={{ scale: 1, opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 18 } }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 120, damping: 18 },
+          }}
           exit={{ scale: 0.8, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -127,13 +170,19 @@ function Lightbox({ items, activeIndex, onClose, onPrev, onNext }) {
 
         {/* Navigation arrows */}
         <button
-          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPrev();
+          }}
           className="absolute left-4 md:left-10 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/60 hover:bg-primary/10 transition-all group"
         >
           <ChevronLeft className="w-6 h-6 text-gray-400 group-hover:text-primary transition-colors" />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onNext(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onNext();
+          }}
           className="absolute right-4 md:right-10 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/60 hover:bg-primary/10 transition-all group"
         >
           <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-primary transition-colors" />
@@ -203,7 +252,9 @@ function GalleryCard({ item, onClick, index }) {
           <div className="absolute top-3 right-3 z-10">
             <div className="flex items-center gap-1.5 px-2 py-1 bg-black/70 border border-primary/40 rounded-sm backdrop-blur-sm">
               <Play className="w-2.5 h-2.5 text-primary fill-primary" />
-              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Video</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest">
+                Video
+              </span>
             </div>
           </div>
         </>
@@ -233,10 +284,11 @@ function GalleryCard({ item, onClick, index }) {
         transition={{ duration: 0.2 }}
       >
         <div className="p-3 bg-primary/90 rounded-full shadow-[0_0_30px_rgba(239,35,60,0.6)]">
-          {item.type === "video"
-            ? <Play className="w-5 h-5 text-white fill-white" />
-            : <ZoomIn className="w-5 h-5 text-white" />
-          }
+          {item.type === "video" ? (
+            <Play className="w-5 h-5 text-white fill-white" />
+          ) : (
+            <ZoomIn className="w-5 h-5 text-white" />
+          )}
         </div>
       </motion.div>
 
@@ -253,13 +305,19 @@ export default function TeamGallery() {
 
   const openLightbox = (index) => setLightboxIndex(index);
   const closeLightbox = () => setLightboxIndex(null);
-  const prevItem = () => setLightboxIndex((i) => (i - 1 + GALLERY_ITEMS.length) % GALLERY_ITEMS.length);
-  const nextItem = () => setLightboxIndex((i) => (i + 1) % GALLERY_ITEMS.length);
+  const prevItem = () =>
+    setLightboxIndex(
+      (i) => (i - 1 + GALLERY_ITEMS.length) % GALLERY_ITEMS.length,
+    );
+  const nextItem = () =>
+    setLightboxIndex((i) => (i + 1) % GALLERY_ITEMS.length);
 
   // Lock body scroll when lightbox is open
   useEffect(() => {
     document.body.style.overflow = lightboxIndex !== null ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [lightboxIndex]);
 
   return (
@@ -275,7 +333,6 @@ export default function TeamGallery() {
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 md:px-6 relative z-10">
-
         {/* ── Section Header ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -297,8 +354,7 @@ export default function TeamGallery() {
                 </span>
               </div>
               <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white italic tracking-tighter uppercase leading-none">
-                Team{" "}
-                <span className="text-primary not-italic">Gallery</span>
+                Team <span className="text-primary not-italic">Gallery</span>
               </h2>
               <p className="mt-3 text-[10px] font-black text-gray-600 uppercase tracking-[0.5em]">
                 Behind the battles · Unfiltered moments
@@ -310,7 +366,8 @@ export default function TeamGallery() {
           <div className="flex items-center gap-4 ml-6 mt-8">
             <div className="h-px flex-1 bg-gradient-to-r from-primary/40 via-primary/10 to-transparent" />
             <span className="text-[8px] font-black text-gray-700 uppercase tracking-[0.4em]">
-              {GALLERY_ITEMS.filter(i => i.type === "image").length} Photos · {GALLERY_ITEMS.filter(i => i.type === "video").length} Videos
+              {GALLERY_ITEMS.filter((i) => i.type === "image").length} Photos ·{" "}
+              {GALLERY_ITEMS.filter((i) => i.type === "video").length} Videos
             </span>
           </div>
         </motion.div>

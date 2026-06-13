@@ -1,47 +1,76 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Image as ImageIcon,
-  Play,
-  Users,
-  Video,
-  Volume2,
-  VolumeX,
-  X,
-  ZoomIn,
+    ChevronLeft,
+    ChevronRight,
+    Image as ImageIcon,
+    Play,
+    Users,
+    Video,
+    Volume2,
+    VolumeX,
+    X,
+    ZoomIn,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Footer from "../components/Footer.jsx";
 import Navbar from "../components/Navbar.jsx";
 
 /* ── Imports ─────────────────────────────────────────────────────────────── */
-import Photo1         from "../assets/Team Gallery/Photo1.jpeg";
-import Photo2         from "../assets/Team Gallery/Photo2.png";
-import Shot1          from "../assets/Team Gallery/Shot1.mp4";
-import Shot2          from "../assets/Team Gallery/Shot2.mp4";
-import Shot3          from "../assets/Team Gallery/Shot3.mp4";
-import TeamMoment1    from "../assets/Team Gallery/Team_moment1.mp4";
-import TeamMoment2    from "../assets/Team Gallery/Team_moment2.webp";
+import Photo1 from "../assets/Team Gallery/Photo1.jpeg";
+import Photo2 from "../assets/Team Gallery/Photo2.png";
+import Shot1 from "../assets/Team Gallery/Shot1.mp4";
+import Shot2 from "../assets/Team Gallery/Shot2.mp4";
+import TeamMoment1 from "../assets/Team Gallery/Team_moment1.mp4";
+import TeamMoment2 from "../assets/Team Gallery/Team_moment2.webp";
 
 /* ── Data ────────────────────────────────────────────────────────────────── */
 // 🖼 Photo Vault  ─ Photo1, Photo2
 const PHOTO_VAULT = [
-  { id: "pv1", type: "image", src: Photo1, caption: "Squad mid-game."      },
-  { id: "pv2", type: "image", src: Photo2, caption: "Full team line-up."   },
+  { id: "pv1", type: "image", src: Photo1, caption: "Squad mid-game." },
+  { id: "pv2", type: "image", src: Photo2, caption: "Full team line-up." },
 ];
 
 // 🎬 Video Vault  ─ Shot1, Shot2, Shot3
 const VIDEO_VAULT = [
-  { id: "vv1", type: "video", src: Shot1, caption: "Raw in-game footage.", portrait: true  },
-  { id: "vv2", type: "video", src: Shot2, caption: "Player highlights.",   portrait: true  },
-  { id: "vv3", type: "video", src: Shot3, caption: "Key match reel.",      portrait: false },
+  {
+    id: "vv1",
+    type: "video",
+    src: Shot1,
+    caption: "Raw in-game footage.",
+    portrait: true,
+  },
+  {
+    id: "vv2",
+    type: "video",
+    src: Shot2,
+    caption: "Player highlights.",
+    portrait: true,
+  },
+  {
+    id: "vv3",
+    type: "video",
+    src: TeamMoment1,
+    caption: "Key match reel.",
+    portrait: false,
+  },
 ];
 
 // 👥 Team Vault  ─ Team_moment1 (video), Team_moment2 (webp image)
 const TEAM_VAULT = [
-  { id: "tv1", type: "video", src: TeamMoment1, caption: "Team action.",       portrait: false },
-  { id: "tv2", type: "image", src: TeamMoment2, caption: "Team group shot.",   portrait: false },
+  {
+    id: "tv1",
+    type: "video",
+    src: TeamMoment1,
+    caption: "Team action.",
+    portrait: false,
+  },
+  {
+    id: "tv2",
+    type: "image",
+    src: TeamMoment2,
+    caption: "Team group shot.",
+    portrait: false,
+  },
 ];
 
 /* ── Lightbox video (own ref so src always triggers load+play) ───────────── */
@@ -54,7 +83,11 @@ function LightboxVideo({ src, muted, onCanPlay }) {
     el.load();
     const p = el.play();
     if (p) p.catch(() => {});
-    return () => { el.pause(); el.src = ""; el.load(); };
+    return () => {
+      el.pause();
+      el.src = "";
+      el.load();
+    };
   }, [src]);
 
   return (
@@ -65,7 +98,12 @@ function LightboxVideo({ src, muted, onCanPlay }) {
       loop
       playsInline
       onCanPlay={onCanPlay}
-      style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        background: "#000",
+      }}
     />
   );
 }
@@ -73,8 +111,8 @@ function LightboxVideo({ src, muted, onCanPlay }) {
 /* ── Lightbox ─────────────────────────────────────────────────────────────── */
 function Lightbox({ items, index, onClose, onPrev, onNext }) {
   const item = items[index];
-  const [muted,  setMuted]  = useState(false);
-  const [ready,  setReady]  = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [ready, setReady] = useState(false);
   const isPortrait = item.type === "video" && item.portrait;
 
   useEffect(() => {
@@ -83,8 +121,8 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
 
   useEffect(() => {
     const h = (e) => {
-      if (e.key === "Escape")     onClose();
-      if (e.key === "ArrowLeft")  onPrev();
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onPrev();
       if (e.key === "ArrowRight") onNext();
     };
     window.addEventListener("keydown", h);
@@ -94,7 +132,9 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
   return (
     <motion.div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.18 }}
       onClick={onClose}
     >
@@ -106,8 +146,10 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
         key={item.id}
         className="relative z-10 flex flex-col items-center px-4 w-full"
         style={{ maxWidth: isPortrait ? "360px" : "min(92vw, 1000px)" }}
-        initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Image ── */}
@@ -116,8 +158,11 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
             src={item.src}
             alt="gallery"
             style={{
-              maxWidth: "88vw", maxHeight: "76vh",
-              objectFit: "contain", borderRadius: "2px", display: "block",
+              maxWidth: "88vw",
+              maxHeight: "76vh",
+              objectFit: "contain",
+              borderRadius: "2px",
+              display: "block",
             }}
           />
         )}
@@ -145,9 +190,11 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
               onClick={() => setMuted((m) => !m)}
               className="absolute bottom-3 right-3 p-2 bg-black/70 border border-white/15 rounded-full hover:border-primary/50 transition-colors"
             >
-              {muted
-                ? <VolumeX className="w-4 h-4 text-gray-400" />
-                : <Volume2 className="w-4 h-4 text-primary" />}
+              {muted ? (
+                <VolumeX className="w-4 h-4 text-gray-400" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-primary" />
+              )}
             </button>
           </div>
         )}
@@ -155,7 +202,9 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
         {/* Caption */}
         <div className="mt-4 text-center select-none">
           <p className="text-2xl">🏏</p>
-          <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest mt-1">{item.caption}</p>
+          <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest mt-1">
+            {item.caption}
+          </p>
           <p className="text-gray-700 text-[9px] font-black uppercase tracking-[0.35em] mt-2">
             {index + 1} / {items.length}
           </p>
@@ -166,13 +215,19 @@ function Lightbox({ items, index, onClose, onPrev, onNext }) {
       {items.length > 1 && (
         <>
           <button
-            onClick={(e) => { e.stopPropagation(); onPrev(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrev();
+            }}
             className="absolute left-3 md:left-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/40 transition-colors group"
           >
             <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onNext(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
             className="absolute right-3 md:right-8 z-10 p-3 bg-black/60 border border-white/10 rounded-full hover:border-primary/40 transition-colors group"
           >
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
@@ -215,7 +270,9 @@ function ImgCard({ item, onClick }) {
         </div>
       </div>
       {/* Emoji label */}
-      <div className="absolute bottom-3 left-3 text-xl opacity-0 group-hover:opacity-100 transition-opacity duration-250 select-none">🏏</div>
+      <div className="absolute bottom-3 left-3 text-xl opacity-0 group-hover:opacity-100 transition-opacity duration-250 select-none">
+        🏏
+      </div>
       <div className="absolute inset-0 border border-transparent group-hover:border-primary/35 transition-colors duration-300 rounded-sm pointer-events-none" />
     </div>
   );
@@ -259,7 +316,8 @@ function VidCard({ item, onClick }) {
         playsInline
         preload="none"
         style={{
-          width: "100%", height: "100%",
+          width: "100%",
+          height: "100%",
           objectFit: isPortrait ? "contain" : "cover",
           background: "#000",
           transition: "transform 0.45s ease",
@@ -271,7 +329,9 @@ function VidCard({ item, onClick }) {
       {/* Video badge */}
       <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-black/80 border border-primary/25 rounded-sm">
         <Play className="w-2.5 h-2.5 text-primary fill-primary" />
-        <span className="text-[8px] font-black text-primary uppercase tracking-widest">Video</span>
+        <span className="text-[8px] font-black text-primary uppercase tracking-widest">
+          Video
+        </span>
       </div>
       {/* Bottom emoji */}
       <div className="absolute bottom-3 left-3 text-xl select-none">🏏</div>
@@ -298,11 +358,15 @@ function VaultHeader({ icon: Icon, title, accent, sub }) {
         <h2 className="text-2xl md:text-4xl font-black text-white italic tracking-tighter uppercase leading-none">
           {title} <span className="text-primary not-italic">{accent}</span>
         </h2>
-        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">{sub}</span>
+        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.5em]">
+          {sub}
+        </span>
       </div>
       <div className="ml-auto flex items-center gap-2 px-4 py-2 border border-white/5 bg-[#0c0c0c]">
         <Icon className="w-3.5 h-3.5 text-primary/60" />
-        <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">{title} {accent}</span>
+        <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">
+          {title} {accent}
+        </span>
       </div>
     </div>
   );
@@ -316,7 +380,9 @@ function Divider() {
         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         <div className="px-5 py-2 border border-primary/20 bg-primary/5 flex items-center gap-2 flex-shrink-0">
           <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">Daitya Legion</span>
+          <span className="text-[8px] font-black text-primary uppercase tracking-[0.4em]">
+            Daitya Legion
+          </span>
         </div>
         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       </div>
@@ -329,18 +395,26 @@ const Gallery = () => {
   // lightbox state: null | { items, index }
   const [lb, setLb] = useState(null);
 
-  const open   = (items, idx) => setLb({ items, index: idx });
-  const close  = () => setLb(null);
-  const prev   = () => setLb((l) => ({ ...l, index: (l.index - 1 + l.items.length) % l.items.length }));
-  const next   = () => setLb((l) => ({ ...l, index: (l.index + 1) % l.items.length }));
+  const open = (items, idx) => setLb({ items, index: idx });
+  const close = () => setLb(null);
+  const prev = () =>
+    setLb((l) => ({
+      ...l,
+      index: (l.index - 1 + l.items.length) % l.items.length,
+    }));
+  const next = () =>
+    setLb((l) => ({ ...l, index: (l.index + 1) % l.items.length }));
 
   // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = lb ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [lb]);
 
-  const totalMedia = PHOTO_VAULT.length + VIDEO_VAULT.length + TEAM_VAULT.length;
+  const totalMedia =
+    PHOTO_VAULT.length + VIDEO_VAULT.length + TEAM_VAULT.length;
 
   return (
     <div className="min-h-screen bg-[#050505] overflow-x-hidden selection:bg-primary selection:text-white">
@@ -349,7 +423,10 @@ const Gallery = () => {
       {/* One static radial glow — no fixed layers, no blur */}
       <div
         className="absolute top-0 left-0 w-full h-[600px] pointer-events-none -z-10"
-        style={{ background: "radial-gradient(ellipse 80% 40% at 30% 0%, rgba(239,35,60,0.07), transparent)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 40% at 30% 0%, rgba(239,35,60,0.07), transparent)",
+        }}
       />
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
@@ -358,10 +435,14 @@ const Gallery = () => {
         <div className="flex items-center gap-3 mb-8 flex-wrap">
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20">
             <ImageIcon className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary">Media Vault</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary">
+              Media Vault
+            </span>
           </div>
           <div className="px-3 py-2 bg-primary rounded-sm shadow-[0_0_14px_rgba(239,35,60,0.3)]">
-            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">✦ New Feature</span>
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">
+              ✦ New Feature
+            </span>
           </div>
         </div>
 
@@ -375,15 +456,22 @@ const Gallery = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Photos",        val: PHOTO_VAULT.length, Icon: ImageIcon },
-            { label: "Player Shots",  val: VIDEO_VAULT.length, Icon: Video     },
-            { label: "Team Moments",  val: TEAM_VAULT.length,  Icon: Users     },
-            { label: "Total Media",   val: totalMedia,          Icon: Play      },
+            { label: "Photos", val: PHOTO_VAULT.length, Icon: ImageIcon },
+            { label: "Player Shots", val: VIDEO_VAULT.length, Icon: Video },
+            { label: "Team Moments", val: TEAM_VAULT.length, Icon: Users },
+            { label: "Total Media", val: totalMedia, Icon: Play },
           ].map(({ label, val, Icon }) => (
-            <div key={label} className="p-6 bg-[#0c0c0c] border border-white/5 hover:border-primary/20 transition-colors group">
+            <div
+              key={label}
+              className="p-6 bg-[#0c0c0c] border border-white/5 hover:border-primary/20 transition-colors group"
+            >
               <Icon className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors mb-3" />
-              <p className="text-3xl md:text-5xl font-black italic tracking-tighter text-white">{val}</p>
-              <p className="text-[8px] font-black text-gray-700 uppercase tracking-widest mt-2">{label}</p>
+              <p className="text-3xl md:text-5xl font-black italic tracking-tighter text-white">
+                {val}
+              </p>
+              <p className="text-[8px] font-black text-gray-700 uppercase tracking-widest mt-2">
+                {label}
+              </p>
             </div>
           ))}
         </div>
@@ -399,7 +487,11 @@ const Gallery = () => {
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {PHOTO_VAULT.map((item, idx) => (
-            <ImgCard key={item.id} item={item} onClick={() => open(PHOTO_VAULT, idx)} />
+            <ImgCard
+              key={item.id}
+              item={item}
+              onClick={() => open(PHOTO_VAULT, idx)}
+            />
           ))}
         </div>
       </div>
@@ -417,14 +509,25 @@ const Gallery = () => {
         {/* Portrait pair (Shot1 + Shot2) side by side, landscape (Shot3) full width */}
         <div className="space-y-5">
           <div className="flex flex-col sm:flex-row gap-5 justify-center">
-            {VIDEO_VAULT.filter(v => v.portrait).map((item, idx) => (
-              <div key={item.id} className="flex-1" style={{ maxWidth: "400px" }}>
-                <VidCard item={item} onClick={() => open(VIDEO_VAULT, VIDEO_VAULT.indexOf(item))} />
+            {VIDEO_VAULT.filter((v) => v.portrait).map((item, idx) => (
+              <div
+                key={item.id}
+                className="flex-1"
+                style={{ maxWidth: "400px" }}
+              >
+                <VidCard
+                  item={item}
+                  onClick={() => open(VIDEO_VAULT, VIDEO_VAULT.indexOf(item))}
+                />
               </div>
             ))}
           </div>
-          {VIDEO_VAULT.filter(v => !v.portrait).map((item) => (
-            <VidCard key={item.id} item={item} onClick={() => open(VIDEO_VAULT, VIDEO_VAULT.indexOf(item))} />
+          {VIDEO_VAULT.filter((v) => !v.portrait).map((item) => (
+            <VidCard
+              key={item.id}
+              item={item}
+              onClick={() => open(VIDEO_VAULT, VIDEO_VAULT.indexOf(item))}
+            />
           ))}
         </div>
       </div>
@@ -441,9 +544,19 @@ const Gallery = () => {
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {TEAM_VAULT.map((item, idx) =>
-            item.type === "image"
-              ? <ImgCard key={item.id} item={item} onClick={() => open(TEAM_VAULT, idx)} />
-              : <VidCard key={item.id} item={item} onClick={() => open(TEAM_VAULT, idx)} />
+            item.type === "image" ? (
+              <ImgCard
+                key={item.id}
+                item={item}
+                onClick={() => open(TEAM_VAULT, idx)}
+              />
+            ) : (
+              <VidCard
+                key={item.id}
+                item={item}
+                onClick={() => open(TEAM_VAULT, idx)}
+              />
+            ),
           )}
         </div>
       </div>
