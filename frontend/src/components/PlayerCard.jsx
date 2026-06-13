@@ -103,6 +103,14 @@ const PlayerCard = ({ player }) => {
     }
   }, []);
 
+  // Normalize titles: accept array, comma-separated string, or missing
+  const titles = useMemo(() => {
+    if (!player) return [];
+    if (Array.isArray(player.titles)) return player.titles.filter(Boolean);
+    if (typeof player.titles === 'string') return player.titles.split(',').map(t => t.trim()).filter(Boolean);
+    return [];
+  }, [player]);
+
   return (
     <>
       <AnimatePresence>
@@ -174,9 +182,9 @@ const PlayerCard = ({ player }) => {
           </h2>
 
           {/* Title badges — always visible below name */}
-          {player.titles?.length > 0 && (
+          {titles.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5 mb-1">
-              {player.titles.map((t, i) => (
+              {titles.map((t, i) => (
                 <div key={i} className="flex items-center gap-1 px-2 py-1 border border-yellow-500/40 bg-yellow-500/8">
                   <Trophy className="w-2.5 h-2.5 text-yellow-400 flex-shrink-0" />
                   <span className="text-[7px] font-black uppercase tracking-widest text-yellow-400 leading-none">{t}</span>
