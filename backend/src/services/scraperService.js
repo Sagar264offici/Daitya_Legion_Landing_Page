@@ -12,7 +12,7 @@ export const scrapePlayers = async (options = {}) => {
   const { force = false, targetPlayers = [] } = options;
   console.log(`🚀 Starting LIVE SYNC via CricHeroes REST API (force=${force})...`);
 
-  // 1. Fetch team members
+  // 1. Fetch team members (includes batter_category + bowler_category)
   const members = await getTeamMembers();
   console.log(`👥 Found ${members.length} team members`);
 
@@ -43,13 +43,20 @@ export const scrapePlayers = async (options = {}) => {
       const allMatches = await getAllPlayerMatches(m.external_id);
       console.log(`    📋 Found ${allMatches.length} matches`);
 
-      // Fetch badges/titles
-      const titles = await getPlayerGamification(m.external_id);
+      // Fetch gamification badges (match achievements like "3 Qwickies")
+      const gamificationBadges = await getPlayerGamification(m.external_id);
 
       // Fetch awards
       const awards = await getPlayerAwards(m.external_id);
       const motm = awards.filter(a => a.name?.toLowerCase().includes('man of the match') ||
                                        a.name?.toLowerCase().includes('fighter of the match')).length;
+
+      // Merge batter_category + bowler_category + gamification badges into titles
+      const categories = [m.batter_category, m.bowler_category]
+        .filter(Boolean);
+      const badgeNames = gamificationBadges.filter(Boolean);
+      const titles = [...new Set([...categories, ...badgeNames])];
+      console.log(`    🏷️  Titles: ${titles.join(', ') || 'none'}`);
 
       // Parse match history
       const processedHistory = allMatches
@@ -65,7 +72,7 @@ export const scrapePlayers = async (options = {}) => {
         matches:          parsed.batting?.matches || parsed.batting?.innings || 0,
         runs:             parsed.batting?.total_runs || 0,
         wickets:          parsed.bowling?.wickets || 0,
-        catches:          0,   // REST API doesn't provide fielding stats directly
+        catches:          0,
         run_outs:         0,
         stumpings:        0,
         man_of_the_match: motm || 0,
@@ -106,7 +113,7 @@ export const scrapePlayers = async (options = {}) => {
         await Player.create(dbPayload);
       }
 
-      console.log(`    ✅ Updated ${m.name}: Runs=${dbPayload.runs}, Wkts=${dbPayload.wickets}, HS=${dbPayload.batting.high_score}, BB=${dbPayload.bowling.best_bowling}`);
+      console.log(`    ✅ Updated ${m.name}: Runs=${dbPayload.runs}, Wkts=${dbPayload.wickets}, Titles=[${titles.join(', ')}]`);
     } catch (e) {
       console.error(`    ❌ Error processing ${m.name}:`, e.message);
     }

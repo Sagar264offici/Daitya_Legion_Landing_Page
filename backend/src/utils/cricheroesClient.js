@@ -75,13 +75,15 @@ export async function getTeamMembers() {
   const data = await apiFetch(`/api/v1/team/get-team-member/${DAITYA_TEAM_ID}`);
   if (!data?.members) return [];
   return data.members.map(m => ({
-    external_id:  String(m.player_id),
-    name:         m.name,
-    image_url:    m.profile_photo || '',
-    role:         m.playing_role || 'Unknown',
-    slug:         m.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') || '',
-    is_captain:   m.is_captain === 1,
-    is_admin:     m.is_admin === 1,
+    external_id:    String(m.player_id),
+    name:           m.name,
+    image_url:      m.profile_photo || '',
+    role:           m.playing_role || 'Unknown',
+    slug:           m.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') || '',
+    is_captain:     m.is_captain === 1,
+    is_admin:       m.is_admin === 1,
+    batter_category: m.batter_category || '',
+    bowler_category: m.bowler_category || '',
   }));
 }
 

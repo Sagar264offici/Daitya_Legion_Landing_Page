@@ -14,8 +14,16 @@ async function syncPlayerFull(playerId) {
   // 2. Get match history
   const allMatches = await getAllPlayerMatches(playerId);
 
-  // 3. Get badges
-  const titles = await getPlayerGamification(playerId);
+  // 3. Get badges + categories from team member data
+  const gamificationBadges = await getPlayerGamification(playerId);
+  let memberCategories = [];
+  try {
+    const { getTeamMembers } = await import('../../../backend/src/utils/cricheroesClient.js');
+    const members = await getTeamMembers();
+    const member = members.find(m => m.external_id === String(playerId));
+    if (member) memberCategories = [member.batter_category, member.bowler_category].filter(Boolean);
+  } catch (_) {}
+  const titles = [...new Set([...memberCategories, ...gamificationBadges])];
 
   // 4. Get awards
   const awards = await getPlayerAwards(playerId);

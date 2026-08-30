@@ -23,8 +23,17 @@ async function syncOnePlayer(playerId) {
     .filter(mh => mh.match_result === 'Resulted')
     .map(mh => parseMatchForHistory(mh));
 
-  // 3. Get badges
-  const titles = await getPlayerGamification(playerId);
+  // 3. Get badges + categories from team member data
+  const gamificationBadges = await getPlayerGamification(playerId);
+  // Fetch team members to get batter_category / bowler_category
+  let memberCategories = [];
+  try {
+    const { getTeamMembers } = await import('../../backend/src/utils/cricheroesClient.js');
+    const members = await getTeamMembers();
+    const member = members.find(m => m.external_id === String(playerId));
+    if (member) memberCategories = [member.batter_category, member.bowler_category].filter(Boolean);
+  } catch (_) {}
+  const titles = [...new Set([...memberCategories, ...gamificationBadges])];
   const awards = await getPlayerAwards(playerId);
   const motm = awards.filter(a => a.name?.toLowerCase().includes('man of the match') ||
                                    a.name?.toLowerCase().includes('fighter of the match')).length;
@@ -143,7 +152,9 @@ export default async function handler(req, res) {
             performance: { batting: { runs: 0, balls: 0, fours: 0, sixes: 0, strike_rate: 0, how_out: 'DNB' }, bowling: { wickets: 0, overs: '0', runs: 0, economy: 0 } },
           }));
           const badges = await apiFetch('/api/v1/player/get-player-gamification/' + pid);
-          const titles = Array.isArray(badges) ? badges.map(b => b.name).filter(Boolean) : [];
+          const gamTitles = Array.isArray(badges) ? badges.map(b => b.name).filter(Boolean) : [];
+          const catTitles = [m.batter_category, m.bowler_category].filter(Boolean);
+          const titles = [...new Set([...catTitles, ...gamTitles])];
           const payload = {
             external_id: pid, name: m.name, image_url: m.profile_photo || '',
             matches: parsed.batting?.matches||0, runs: parsed.batting?.total_runs||0, wickets: parsed.bowling?.wickets||0,
