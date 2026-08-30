@@ -1099,6 +1099,8 @@ const AdminDashboard = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [syncStatus, setSyncStatus] = useState("idle");
+  const [bulkSyncing, setBulkSyncing] = useState(false);
+  const [bulkSyncMsg, setBulkSyncMsg] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     role: "Batsman",
@@ -1410,6 +1412,46 @@ const AdminDashboard = () => {
                     )}
                   </AnimatePresence>
                   <button
+                    onClick={async () => {
+                      if (bulkSyncing) return;
+                      const secret = prompt('Enter admin secret to trigger full CricHeroes sync:');
+                      if (!secret) return;
+                      setBulkSyncing(true);
+                      setBulkSyncMsg('Syncing all players from CricHeroes...');
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/api/admin/bulk-sync?secret=${encodeURIComponent(secret)}&force=true`);
+                        const data = await res.json();
+                        if (data.success) {
+                          setBulkSyncMsg('Sync started! Refreshing data...');
+                          setTimeout(async () => {
+                            await fetchPlayers();
+                            setBulkSyncMsg('Sync complete!');
+                            setTimeout(() => setBulkSyncMsg(''), 3000);
+                          }, 5000);
+                        } else {
+                          setBulkSyncMsg(`Error: ${data.error}`);
+                        }
+                      } catch (e) {
+                        setBulkSyncMsg(`Failed: ${e.message}`);
+                      } finally {
+                        setBulkSyncing(false);
+                        setTimeout(() => setBulkSyncMsg(''), 8000);
+                      }
+                    }}
+                    className={`flex items-center gap-3 px-6 py-4 text-xs font-black uppercase tracking-[0.4em] border transition-all group ${
+                      bulkSyncing
+                        ? 'bg-primary/20 border-primary/50 text-primary cursor-wait'
+                        : 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500 hover:text-white'
+                    } shadow-[0_0_30px_rgba(34,197,94,0.15)]`}
+                  >
+                    {bulkSyncing ? (
+                      <RefreshCcw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCcw className="w-4 h-4 group-hover:rotate-180 transition-transform" />
+                    )}
+                    Sync All
+                  </button>
+                  <button
                     onClick={() => setIsFormOpen(true)}
                     className="flex items-center gap-3 px-6 py-4 bg-primary text-white text-xs font-black uppercase tracking-[0.4em] hover:bg-black hover:text-primary border border-primary transition-all shadow-[0_0_30px_rgba(239,35,60,0.3)] group"
                   >
@@ -1417,6 +1459,12 @@ const AdminDashboard = () => {
                     <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                   </button>
                 </div>
+                {bulkSyncMsg && (
+                  <div className="mt-4 flex items-center gap-2 px-4 py-2 border border-primary/20 bg-primary/5 text-[9px] font-black uppercase tracking-widest text-primary animate-pulse">
+                    <RefreshCcw className="w-3 h-3 animate-spin" />
+                    {bulkSyncMsg}
+                  </div>
+                )}
               </div>
 
               {loading ? (

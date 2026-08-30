@@ -345,11 +345,16 @@ const PlayerDetailsModal = ({ player, onClose }) => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 <Stat label="Catches" value={catches} large />
                 <Stat label="Run Outs" value={runOuts} large />
+                <Stat label="Stumpings" value={player.stumpings ?? 0} />
                 <Stat label="Man of Match" value={motm} large accent />
                 <Stat label="Tournaments" value={tourn} />
                 <Stat label="Win Rate" value={`${winRate}%`} sub={`${mtch} matches`} />
-                <Stat label="Stumpings" value={player.stumpings ?? 0} />
               </div>
+              {catches === 0 && runOuts === 0 && (player.stumpings ?? 0) === 0 && (
+                <p className="text-[8px] text-gray-700 font-bold uppercase tracking-widest text-center py-4">
+                  Fielding stats will appear after a deep sync
+                </p>
+              )}
               {catches === 0 && runOuts === 0 && (
                 <p className="text-[8px] text-gray-700 font-bold uppercase tracking-widest text-center py-4">
                   Fielding stats will appear after a sync

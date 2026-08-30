@@ -139,6 +139,7 @@ const PlayerCard = ({ player }) => {
   const sixes = player.batting?.sixes ?? 0;
   const catches = player.catches ?? 0;
   const runOuts = player.run_outs ?? 0;
+  const stumpings = player.stumpings ?? 0;
   const fifties = player.batting?.fifties ?? 0;
   const hundreds = player.batting?.hundreds ?? 0;
 
@@ -352,7 +353,7 @@ const PlayerCard = ({ player }) => {
               Field
             </span>
             <span className="text-sm font-black text-gray-300 italic">
-              {catches}C/{runOuts}RO
+              {catches}C/{runOuts}RO/{player.stumpings ?? 0}ST
             </span>
           </div>
         </div>

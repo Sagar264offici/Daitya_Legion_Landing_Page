@@ -28,6 +28,7 @@ const playerSchema = new mongoose.Schema(
     },
     catches: { type: Number, default: 0 },
     run_outs: { type: Number, default: 0 },
+    stumpings: { type: Number, default: 0 },
     man_of_the_match: { type: Number, default: 0 },
     tournaments: { type: Number, default: 0 },
     image_url: {
@@ -62,6 +63,7 @@ const playerSchema = new mongoose.Schema(
       batting_style: { type: String, default: '' },
       bowling_style: { type: String, default: '' }
     },
+    last_synced_at: { type: Date },
     recent_form: [
       {
         date: String,

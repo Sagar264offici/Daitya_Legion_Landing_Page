@@ -59,6 +59,10 @@
       "destination": "/api/admin/sync-player/route.js"
     },
     {
+      "source": "/api/admin/bulk-sync",
+      "destination": "/api/admin/bulk-sync/route.js"
+    },
+    {
       "source": "/api/players/bulk-seed",
       "destination": "/api/players/bulk-seed.js"
     }

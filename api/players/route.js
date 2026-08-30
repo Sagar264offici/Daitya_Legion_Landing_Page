@@ -6,64 +6,53 @@ import {
     updatePlayer,
 } from "../../backend/src/controllers/playerController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import {
+  getBuildId, fetchJSON, URLs, parseStatement, computeBestBowling,
+  computeMilestones, aggregateFielding, parseFieldingFromDismissal,
+} from "../../backend/src/utils/cricheroesClient.js";
 
-// ── CricHeroes player sync helpers ──────────────────────────────────────────
-const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-
-async function chFetch(url, json = true) {
-  const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': json ? 'application/json' : 'text/html', 'Referer': 'https://cricheroes.com/' } });
-  if (!r.ok) throw new Error(`CricHeroes HTTP ${r.status} → ${url}`);
-  return json ? r.json() : r.text();
-}
-
-async function getBuildId() {
-  const html = await chFetch('https://cricheroes.com/', false);
-  const m = html.match(/"buildId"\s*:\s*"([^"]+)"/);
-  if (!m) throw new Error('buildId not found in CricHeroes HTML');
-  return m[1];
-}
-
-function parseStatement(ps = '') {
-  const n = (rx) => { const m = ps.match(rx); return m ? parseFloat(m[1]) : 0; };
-  return {
-    innings:         n(/With (\d+) turns at the crease/),
-    high_score:      n(/top score of <b>([^<]+)<\/b>/),
-    batting_average: n(/average of <b>([^<]+)<\/b>/),
-    strike_rate:     n(/strike rate of <b>([^<]+)<\/b>/),
-    sixes:           n(/<b>(\d+) sixes<\/b>/),
-    fours:           n(/<b>(\d+) fours<\/b>/),
-    overs:           n(/bowled <b>([^<]+)<\/b> overs/),
-    total_wickets:   n(/taking <b>(\d+)<\/b> wickets/),
-    economy:         n(/economy rate of <b>([^<]+)<\/b>/),
-    catches:         n(/Taking <b>(\d+)<\/b> catches/),
-    run_outs:        n(/making <b>(\d+)<\/b> run outs/),
-    man_of_the_match:n(/has won <b>(\d+)<\/b> Man of the Match/),
-    tournaments:     n(/played in <b>(\d+)<\/b> different tournaments/),
-  };
-}
-
+// ── Enhanced single-player sync ──────────────────────────────────────────────
 async function syncOnePlayer(playerId, slug) {
   const buildId = await getBuildId();
 
-  const statsUrl = `https://cricheroes.com/_next/data/${buildId}/player-profile/${playerId}/${slug}/stats.json?playerId=${playerId}&slug=${slug}`;
-  const statsJson = await chFetch(statsUrl);
+  // 1. Fetch player stats
+  const statsJson = await fetchJSON(URLs.stats(buildId, playerId, slug));
   const info = statsJson?.pageProps?.playerInfo?.data;
   if (!info) throw new Error(`No playerInfo from CricHeroes for ${playerId}/${slug}`);
 
   const ex = parseStatement(info.player_statement || '');
 
-  // Try to get best bowling from match history
-  let bestBowling = '—';
-  let bestW = 0, bestR = 9999;
-  try {
-    const matchUrl = `https://cricheroes.com/_next/data/${buildId}/player-profile/${playerId}/${slug}/matches.json?playerId=${playerId}&slug=${slug}`;
-    const matchJson = await chFetch(matchUrl);
-    const matches = matchJson?.pageProps?.matches?.data || [];
-    for (const m of matches) {
-      // We don't have individual scorecard here, skip detailed perf
-      void m;
-    }
-  } catch (_) { /* optional */ }
+  // 2. Fetch match history (first 2 pages for quick sync)
+  let matchHistory = [];
+  let bowlingPerfs = [];
+  let totalCatches = 0, totalRunOuts = 0, totalStumpings = 0;
+
+  for (let page = 1; page <= 2; page++) {
+    try {
+      const matchJson = await fetchJSON(URLs.matches(buildId, playerId, slug, page));
+      const matches = matchJson?.pageProps?.matches?.data || [];
+      if (matches.length === 0) break;
+
+      matchHistory.push(...matches.map(m => ({
+        match_id: String(m.match_id),
+        date: new Date(m.match_start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        opponent: String(m.team_a_id) === '11183415' ? m.team_b : m.team_a,
+        won: String(m.winning_team_id) === '11183415',
+        my_score: (String(m.team_a_id) === '11183415' ? m.team_a_summary : m.team_b_summary) || '—',
+        opp_score: (String(m.team_a_id) === '11183415' ? m.team_b_summary : m.team_a_summary) || '—',
+        result: m.match_summary?.summary || '',
+        cricheroes_url: `https://cricheroes.com/scorecard/${m.match_id}/match-details`,
+        performance: {
+          batting: { runs: 0, balls: 0, fours: 0, sixes: 0, strike_rate: 0, how_out: 'DNB' },
+          bowling: { wickets: 0, overs: '0', runs: 0, economy: 0 },
+        },
+      })), { page });
+    } catch (_) { break; }
+  }
+
+  // 3. Compute derived stats
+  const { fifties, hundreds } = computeMilestones(matchHistory);
+  const bestBowling = computeBestBowling(bowlingPerfs);
 
   const Player = (await import("../../backend/src/models/Player.js")).default;
 
@@ -77,6 +66,7 @@ async function syncOnePlayer(playerId, slug) {
     wickets:          info.total_wickets || 0,
     catches:          ex.catches || 0,
     run_outs:         ex.run_outs || 0,
+    stumpings:        0,
     man_of_the_match: ex.man_of_the_match || 0,
     tournaments:      ex.tournaments || 0,
     batting: {
@@ -87,14 +77,14 @@ async function syncOnePlayer(playerId, slug) {
       innings:     ex.innings || 0,
       fours:       ex.fours || 0,
       sixes:       ex.sixes || 0,
-      fifties:     0,
-      hundreds:    0,
+      fifties,
+      hundreds,
     },
     bowling: {
       wickets:      info.total_wickets || 0,
       economy:      ex.economy || 0,
       overs:        ex.overs || 0,
-      average:      0,
+      average:      info.total_wickets > 0 && ex.overs > 0 ? Math.round((ex.overs * 6 / info.total_wickets) * 100) / 100 : 0,
       five_w:       0,
       best_bowling: bestBowling,
     },
@@ -103,6 +93,8 @@ async function syncOnePlayer(playerId, slug) {
       batting_style: info.batting_hand || '',
       bowling_style: info.bowling_style || '',
     },
+    match_history:  matchHistory,
+    last_synced_at: new Date(),
   };
 
   const updated = await Player.findOneAndUpdate(
@@ -111,7 +103,14 @@ async function syncOnePlayer(playerId, slug) {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  return { name: updated.name, image_url: updated.image_url, matches: updated.matches, runs: updated.runs, wickets: updated.wickets, external_id: updated.external_id };
+  return {
+    name: updated.name, image_url: updated.image_url,
+    matches: updated.matches, runs: updated.runs, wickets: updated.wickets,
+    catches: updated.catches, run_outs: updated.run_outs, stumpings: updated.stumpings,
+    fifties: updated.batting?.fifties, hundreds: updated.batting?.hundreds,
+    best_bowling: updated.bowling?.best_bowling,
+    external_id: updated.external_id,
+  };
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
