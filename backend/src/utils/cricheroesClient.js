@@ -1,218 +1,275 @@
 /**
- * Shared CricHeroes API client – used by scraperService, api/players, api/admin sync, etc.
+ * CricHeroes REST API client
  *
- * Features:
- *   • Build ID caching (refreshes only when stale)
- *   • Rate limiting between requests
- *   • Retry with exponential back-off
- *   • AbortController timeout on every fetch
- *   • Fielding-stats parser (catches / run-outs / stumpings from how_to_out)
+ * Uses the public REST API at https://api.cricheroes.in
+ * with the website's embedded API key. No scraping needed.
  */
 
+import crypto from 'crypto';
+
+const API_HOST = 'https://api.cricheroes.in';
+const API_KEY  = 'cr!CkH3r0s';
 const DAITYA_TEAM_ID = '11183415';
 
-const USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-const REQUEST_DELAY_MS = 1200;
-const FETCH_TIMEOUT_MS  = 30000;
-const BUILD_ID_TTL_MS   = 30 * 60 * 1000; // 30 min
+const REQUEST_DELAY_MS = 400;   // 400ms between API calls (much faster than scraping)
+const FETCH_TIMEOUT_MS  = 15000;
 
 // ── Rate limiter ─────────────────────────────────────────────────────────────
-let _lastRequestTime = 0;
-
+let _lastReq = 0;
 async function rateLimit() {
-  const now  = Date.now();
-  const diff = now - _lastRequestTime;
-  if (diff < REQUEST_DELAY_MS) {
-    await new Promise(r => setTimeout(r, REQUEST_DELAY_MS - diff));
-  }
-  _lastRequestTime = Date.now();
+  const diff = Date.now() - _lastReq;
+  if (diff < REQUEST_DELAY_MS) await new Promise(r => setTimeout(r, REQUEST_DELAY_MS - diff));
+  _lastReq = Date.now();
 }
 
-// ── Build ID cache ───────────────────────────────────────────────────────────
-let _buildId       = null;
-let _buildIdFetchedAt = 0;
-
-export async function getBuildId(force = false) {
-  const now = Date.now();
-  if (!force && _buildId && (now - _buildIdFetchedAt) < BUILD_ID_TTL_MS) {
-    return _buildId;
-  }
-
-  const html = await fetchText('https://cricheroes.com/');
-  const match = html.match(/"buildId"\s*:\s*"([^"]+)"/);
-  if (!match) throw new Error('Could not extract buildId from CricHeroes');
-
-  _buildId           = match[1];
-  _buildIdFetchedAt  = now;
-  return _buildId;
-}
-
-// ── Core fetchers ────────────────────────────────────────────────────────────
+// ── Core fetcher ─────────────────────────────────────────────────────────────
 
 /**
- * Fetch raw text from a URL (rate-limited, with timeout).
+ * Make a request to the CricHeroes REST API.
+ * @param {string} endpoint - e.g. '/api/v1/team/get-team-member/11183415'
+ * @returns {object|null} - parsed JSON response data
  */
-export async function fetchText(url) {
+export async function apiFetch(endpoint) {
   await rateLimit();
   const controller = new AbortController();
   const tid = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
+    const url = `${API_HOST}${endpoint}`;
     const res = await fetch(url, {
+      method: 'GET',
       headers: {
-        'User-Agent': USER_AGENT,
-        Accept:       'text/html',
-        Referer:      'https://cricheroes.com/',
+        'User-Agent':  UA,
+        'Accept':      'application/json',
+        'api-key':     API_KEY,
+        'device-type': 'web',
+        'udid':        crypto.randomUUID(),
       },
       signal: controller.signal,
     });
     clearTimeout(tid);
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return res.text();
+
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${endpoint}`);
+    const json = await res.json();
+    if (!json.status) {
+      console.warn(`  ⚠️  API returned status=false for ${endpoint}:`, json.error?.message);
+      return null;
+    }
+    return json.data ?? json;
   } catch (e) {
     clearTimeout(tid);
+    if (e.name === 'AbortError') {
+      console.warn(`  ⏰ Timeout for ${endpoint}`);
+      return null;
+    }
     throw e;
   }
 }
 
-/**
- * Fetch JSON from a CricHeroes _next/data URL.
- * Retries up to `retries` times with exponential back-off.
- * Returns null on 404.
- */
-export async function fetchJSON(url, retries = 3) {
-  await rateLimit();
-  for (let i = 0; i < retries; i++) {
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': USER_AGENT,
-          Accept:       'application/json',
-          Referer:      'https://cricheroes.com/',
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(tid);
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch (e) {
-      clearTimeout(tid);
-      if (i === retries - 1) throw e;
-      await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-    }
-  }
-  return null;
+// ── Team endpoints ───────────────────────────────────────────────────────────
+
+/** Get all team members with player_id, name, profile_photo */
+export async function getTeamMembers() {
+  const data = await apiFetch(`/api/v1/team/get-team-member/${DAITYA_TEAM_ID}`);
+  if (!data?.members) return [];
+  return data.members.map(m => ({
+    external_id:  String(m.player_id),
+    name:         m.name,
+    image_url:    m.profile_photo || '',
+    role:         m.playing_role || 'Unknown',
+    slug:         m.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '') || '',
+    is_captain:   m.is_captain === 1,
+    is_admin:     m.is_admin === 1,
+  }));
 }
 
-// ── Convenience URL builders ─────────────────────────────────────────────────
+/** Get team profile info (logo, name, etc.) */
+export async function getTeamProfile() {
+  return await apiFetch(`/api/v1/team/get-team-profile-info/${DAITYA_TEAM_ID}`);
+}
 
-export const URLs = {
-  stats: (buildId, playerId, slug) =>
-    `https://cricheroes.com/_next/data/${buildId}/player-profile/${playerId}/${slug}/stats.json?playerId=${playerId}&slug=${slug}`,
+/** Get team aggregate statistics */
+export async function getTeamStatistics() {
+  return await apiFetch(`/api/v1/team/get-team-statistic/${DAITYA_TEAM_ID}`);
+}
 
-  matches: (buildId, playerId, slug, page = 1) =>
-    `https://cricheroes.com/_next/data/${buildId}/player-profile/${playerId}/${slug}/matches.json?playerId=${playerId}&slug=${slug}` +
-    (page > 1 ? `&page=${page}` : ''),
+// ── Player endpoints ─────────────────────────────────────────────────────────
 
-  scorecard: (buildId, matchId, slug) =>
-    `https://cricheroes.com/_next/data/${buildId}/scorecard/${matchId}/${slug}/scorecard/scorecard.json?matchId=${matchId}`,
+/**
+ * Get a player's full batting & bowling statistics.
+ * Returns { statistics: { batting: [...], bowling: [...] } }
+ */
+export async function getPlayerStatistics(playerId) {
+  return await apiFetch(`/api/v1/player/get-player-statistic/${playerId}`);
+}
 
-  teamMembers: (buildId, slug = 'daitya-legion') =>
-    `https://cricheroes.com/_next/data/${buildId}/team-profile/${DAITYA_TEAM_ID}/${slug}/members.json?teamId=${DAITYA_TEAM_ID}&teamName=${slug}&tab=members`,
+/**
+ * Get a player's match history (paginated, 10 per page).
+ * Returns array of match objects.
+ */
+export async function getPlayerMatches(playerId, page = 1) {
+  const data = await apiFetch(`/api/v1/player/get-player-match/${playerId}?pageno=${page}`);
+  if (!data) return [];
+  // Data comes as { '0': {...}, '1': {...}, ... } or an array
+  const matches = Array.isArray(data) ? data : Object.values(data);
+  return matches.filter(m => m && m.match_id);
+}
 
-  teamProfile: (buildId, slug = 'daitya-legion') =>
-    `https://cricheroes.com/_next/data/${buildId}/team-profile/${DAITYA_TEAM_ID}/${slug}.json`,
-};
+/**
+ * Get all player matches (all pages).
+ */
+export async function getAllPlayerMatches(playerId) {
+  const allMatches = [];
+  let page = 1;
+  const maxPages = 10; // safety limit
 
-// ── Player statement parser ──────────────────────────────────────────────────
+  while (page <= maxPages) {
+    const matches = await getPlayerMatches(playerId, page);
+    if (matches.length === 0) break;
+    allMatches.push(...matches);
+    if (matches.length < 10) break; // last page
+    page++;
+  }
+  return allMatches;
+}
 
-export function parseStatement(ps = '') {
-  if (!ps) return {};
-  const n = rx => { const m = ps.match(rx); return m ? parseFloat(m[1]) : 0; };
+/**
+ * Get player gamification (badges/titles).
+ */
+export async function getPlayerGamification(playerId) {
+  const data = await apiFetch(`/api/v1/player/get-player-gamification/${playerId}`);
+  if (!Array.isArray(data)) return [];
+  return data.map(b => b.name).filter(Boolean);
+}
+
+/**
+ * Get player awards (MOM, etc.)
+ */
+export async function getPlayerAwards(playerId) {
+  const data = await apiFetch(`/api/v1/player/get-player-award-new/${playerId}/overall`);
+  if (!Array.isArray(data)) return [];
+  return data;
+}
+
+/**
+ * Get player tournament filters
+ */
+export async function getPlayerTournaments(playerId) {
+  return await apiFetch(`/api/v1/player/get-player-filter-new/${playerId}`);
+}
+
+// ── Scorecard endpoints ──────────────────────────────────────────────────────
+
+/**
+ * Get scorecard summary for a match.
+ */
+export async function getScorecardSummary(matchId) {
+  return await apiFetch(`/api/v1/scorecard/get-summary-scorecard/${matchId}`);
+}
+
+/**
+ * Get mini scorecard (live/latest innings data).
+ */
+export async function getMiniScorecard(matchId) {
+  return await apiFetch(`/api/v1/scorecard/get-mini-scorecard/${matchId}`);
+}
+
+/**
+ * Get match detailed info.
+ */
+export async function getMatchDetailedInfo(matchId) {
+  return await apiFetch(`/api/v1/scorecard/get-match-detailed-info/${matchId}`);
+}
+
+// ── Stat parsing helpers ─────────────────────────────────────────────────────
+
+/**
+ * Parse the statistics array from getPlayerStatistics into a flat object.
+ * Input:  { statistics: { batting: [{title, value}, ...], bowling: [...] } }
+ * Output: { matches, innings, runs, average, ... }
+ */
+export function parsePlayerStats(statsResponse) {
+  if (!statsResponse?.statistics) return {};
+
+  const parseArray = (arr) => {
+    const result = {};
+    for (const item of (arr || [])) {
+      const key = item.title?.toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/highest_runs/, 'high_score')
+        .replace(/avg/, 'average')
+        .replace(/sr/, 'strike_rate');
+      result[key] = item.value;
+    }
+    return result;
+  };
+
+  const bat = parseArray(statsResponse.statistics.batting);
+  const bowl = parseArray(statsResponse.statistics.bowling);
+
   return {
-    innings:          n(/With (\d+) turns at the crease/),
-    high_score:       n(/top score of <b>([^<]+)<\/b>/),
-    batting_average:  n(/average of <b>([^<]+)<\/b>/),
-    strike_rate:      n(/strike rate of <b>([^<]+)<\/b>/),
-    sixes:            n(/<b>(\d+) sixes<\/b>/),
-    fours:            n(/<b>(\d+) fours<\/b>/),
-    overs:            n(/bowled <b>([^<]+)<\/b> overs/),
-    total_wickets:    n(/taking <b>(\d+)<\/b> wickets/),
-    economy:          n(/economy rate of <b>([^<]+)<\/b>/),
-    catches:          n(/Taking <b>(\d+)<\/b> catches/),
-    run_outs:         n(/making <b>(\d+)<\/b> run outs/),
-    man_of_the_match: n(/has won <b>(\d+)<\/b> Man of the Match/),
-    tournaments:      n(/played in <b>(\d+)<\/b> different tournaments/),
+    batting: {
+      total_runs:  parseInt(bat.runs) || 0,
+      innings:     parseInt(bat.innings) || 0,
+      average:     parseFloat(bat.average) || 0,
+      strike_rate: parseFloat(bat.strike_rate) || 0,
+      high_score:  parseInt(bat.high_score) || 0,
+      fours:       parseInt(bat['4s']) || 0,
+      sixes:       parseInt(bat['6s']) || 0,
+      fifties:     parseInt(bat['50s']) || 0,
+      hundreds:    parseInt(bat['100s']) || 0,
+      matches:     parseInt(bat.matches) || 0,
+      ducks:       parseInt(bat.ducks) || 0,
+      not_outs:    parseInt(bat.not_out) || 0,
+      thirties:    parseInt(bat['30s']) || 0,
+      won:         parseInt(bat.won) || 0,
+      lost:        parseInt(bat.loss) || 0,
+    },
+    bowling: {
+      wickets:    parseInt(bowl.wickets) || 0,
+      economy:    parseFloat(bowl.economy) || 0,
+      overs:      parseFloat(bowl.overs) || 0,
+      average:    parseFloat(bowl.average) || 0,
+      best_bowling: bowl.best_bowling || '—',
+      strike_rate:  parseFloat(bowl.strike_rate) || 0,
+      maidens:    parseInt(bowl.maidens) || 0,
+      five_w:     parseInt(bowl['5w']) || parseInt(bowl['5_wickets']) || 0,
+      runs:       parseInt(bowl.runs) || 0,
+      wides:      parseInt(bowl.wides) || 0,
+      no_balls:   parseInt(bowl.no_balls) || 0,
+    },
   };
 }
 
-// ── Fielding stats from batting dismissal strings ────────────────────────────
-//
-// CricHeroes how_to_out examples:
-//   "c PlayerName b BowlerName"         → catch
-//   "c & b BowlerName"                  → catch
-//   "run out (PlayerName)"              → run out
-//   "st PlayerName b BowlerName"        → stumping
-//   "Not Out" / "DNB"                  → nothing
+/**
+ * Parse a CricHeroes match into our match_history format.
+ */
+export function parseMatchForHistory(match, daityaTeamId = DAITYA_TEAM_ID) {
+  const isDaityaA = String(match.team_a_id) === daityaTeamId;
+  const isDaityaB = String(match.team_b_id) === daityaTeamId;
 
-export function parseFieldingFromDismissal(howOut = '') {
-  if (!howOut || howOut === 'DNB') return { catches: 0, run_outs: 0, stumpings: 0 };
-  const low = howOut.toLowerCase();
   return {
-    catches:   /^c\s+/.test(low) && !low.startsWith('c & b') ? 1 : 0,
-    run_outs:  /^run\s+out/i.test(low) ? 1 : 0,
-    stumpings: /^st\s+/.test(low) ? 1 : 0,
+    match_id: String(match.match_id),
+    date: new Date(match.match_start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    opponent: isDaityaA ? match.team_b : match.team_a,
+    won: String(match.winning_team_id) === daityaTeamId,
+    my_score:  (isDaityaA ? match.team_a_summary : match.team_b_summary) || '—',
+    opp_score: (isDaityaA ? match.team_b_summary : match.team_a_summary) || '—',
+    result: match.match_summary?.summary || '',
+    ground: match.ground_name || '',
+    city: match.city_name || '',
+    match_type: match.match_type || '',
+    ball_type: match.ball_type || '',
+    toss: match.toss_details || '',
+    tournament: match.tournament_name || '',
+    cricheroes_url: `https://cricheroes.com/scorecard/${match.match_id}/match-details`,
+    performance: {
+      batting: { runs: 0, balls: 0, fours: 0, sixes: 0, strike_rate: 0, how_out: 'DNB' },
+      bowling: { wickets: 0, overs: '0', runs: 0, economy: 0 },
+    },
   };
-}
-
-/**
- * Aggregate fielding stats from an array of match performances.
- */
-export function aggregateFielding(matchPerformances = []) {
-  let catches = 0, run_outs = 0, stumpings = 0;
-  for (const perf of matchPerformances) {
-    const f = parseFieldingFromDismissal(perf.how_out);
-    catches   += f.catches;
-    run_outs  += f.run_outs;
-    stumpings += f.stumpings;
-  }
-  return { catches, run_outs, stumpings };
-}
-
-// ── Compute best bowling from a list of per-match bowling figures ─────────────
-
-/**
- * @param {Array<{wickets: number, runs: number, overs: string|number}>} bowlingPerfs
- * @returns {string} e.g. "3/15"
- */
-export function computeBestBowling(bowlingPerfs = []) {
-  let best = '—';
-  let bestW = -1, bestR = 9999;
-  for (const b of bowlingPerfs) {
-    const w = b.wickets ?? 0;
-    const r = b.runs    ?? 0;
-    if (w > bestW || (w === bestW && r < bestR)) {
-      bestW = w; bestR = r;
-      best = `${w}/${r}`;
-    }
-  }
-  return bestW >= 0 ? best : '—';
-}
-
-// ── Compute fifties & hundreds from match history ────────────────────────────
-
-export function computeMilestones(matchHistory = []) {
-  let fifties = 0, hundreds = 0;
-  for (const m of matchHistory) {
-    const runs = m.performance?.batting?.runs ?? 0;
-    if (runs >= 100) hundreds++;
-    else if (runs >= 50) fifties++;
-  }
-  return { fifties, hundreds };
 }
 
 // ── Blacklists ───────────────────────────────────────────────────────────────
@@ -225,50 +282,4 @@ export const BLACKLIST_NAMES = [
   'Himanshu Bisht', 'Saksham',
 ];
 
-// ── Team member list ─────────────────────────────────────────────────────────
-
-export async function getTeamMembers(buildId) {
-  console.log('  👥 Fetching team member list...');
-  try {
-    const slugs = ['daitya-legion', 'daitya-legion-'];
-    for (const slug of slugs) {
-      const url   = URLs.teamMembers(buildId, slug);
-      const json  = await fetchJSON(url);
-      const data  = json?.pageProps?.memberList?.data;
-      if (data && Array.isArray(data)) {
-        return data
-          .map(m => ({
-            external_id: String(m.player_id || m.member_id),
-            name:        m.name,
-            image_url:   m.profile_photo,
-            role:        m.playing_role,
-            slug:        m.slug || m.name.toLowerCase().replace(/\s+/g, '-'),
-          }))
-          .filter(m =>
-            !BLACKLIST_IDS.includes(m.external_id) &&
-            !BLACKLIST_NAMES.includes(m.name)
-          );
-      }
-    }
-  } catch (_) { /* fall through */ }
-
-  // HTML fallback
-  try {
-    const html = await fetchText('https://cricheroes.com/team-profile/11183415/daitya-legion/members');
-    const links = [...html.matchAll(/href="\/player-profile\/(\d+)\/([^"]+)/g)];
-    const seen  = new Set();
-    const out   = [];
-    for (const [, id, slug] of links) {
-      if (seen.has(id) || BLACKLIST_IDS.includes(id)) continue;
-      seen.add(id);
-      const name = decodeURIComponent(slug.replace(/-/g, ' '));
-      if (BLACKLIST_NAMES.includes(name)) continue;
-      out.push({ external_id: id, name, slug, role: 'Unknown' });
-    }
-    return out;
-  } catch (_) {
-    return [];
-  }
-}
-
-export { DAITYA_TEAM_ID, USER_AGENT };
+export { DAITYA_TEAM_ID, API_HOST };

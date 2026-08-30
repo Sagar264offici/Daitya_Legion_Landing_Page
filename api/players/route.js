@@ -7,95 +7,66 @@ import {
 } from "../../backend/src/controllers/playerController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import {
-  getBuildId, fetchJSON, URLs, parseStatement, computeBestBowling,
-  computeMilestones, aggregateFielding, parseFieldingFromDismissal,
+  getPlayerStatistics, getAllPlayerMatches, getPlayerGamification,
+  getPlayerAwards, parsePlayerStats, parseMatchForHistory,
 } from "../../backend/src/utils/cricheroesClient.js";
 
 // ── Enhanced single-player sync ──────────────────────────────────────────────
-async function syncOnePlayer(playerId, slug) {
-  const buildId = await getBuildId();
+async function syncOnePlayer(playerId) {
+  // 1. Get player stats from REST API
+  const statsResp = await getPlayerStatistics(playerId);
+  const parsed = parsePlayerStats(statsResp);
 
-  // 1. Fetch player stats
-  const statsJson = await fetchJSON(URLs.stats(buildId, playerId, slug));
-  const info = statsJson?.pageProps?.playerInfo?.data;
-  if (!info) throw new Error(`No playerInfo from CricHeroes for ${playerId}/${slug}`);
+  // 2. Get match history
+  const allMatches = await getAllPlayerMatches(playerId);
+  const processedHistory = allMatches
+    .filter(mh => mh.match_result === 'Resulted')
+    .map(mh => parseMatchForHistory(mh));
 
-  const ex = parseStatement(info.player_statement || '');
-
-  // 2. Fetch match history (first 2 pages for quick sync)
-  let matchHistory = [];
-  let bowlingPerfs = [];
-  let totalCatches = 0, totalRunOuts = 0, totalStumpings = 0;
-
-  for (let page = 1; page <= 2; page++) {
-    try {
-      const matchJson = await fetchJSON(URLs.matches(buildId, playerId, slug, page));
-      const matches = matchJson?.pageProps?.matches?.data || [];
-      if (matches.length === 0) break;
-
-      matchHistory.push(...matches.map(m => ({
-        match_id: String(m.match_id),
-        date: new Date(m.match_start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-        opponent: String(m.team_a_id) === '11183415' ? m.team_b : m.team_a,
-        won: String(m.winning_team_id) === '11183415',
-        my_score: (String(m.team_a_id) === '11183415' ? m.team_a_summary : m.team_b_summary) || '—',
-        opp_score: (String(m.team_a_id) === '11183415' ? m.team_b_summary : m.team_a_summary) || '—',
-        result: m.match_summary?.summary || '',
-        cricheroes_url: `https://cricheroes.com/scorecard/${m.match_id}/match-details`,
-        performance: {
-          batting: { runs: 0, balls: 0, fours: 0, sixes: 0, strike_rate: 0, how_out: 'DNB' },
-          bowling: { wickets: 0, overs: '0', runs: 0, economy: 0 },
-        },
-      })), { page });
-    } catch (_) { break; }
-  }
-
-  // 3. Compute derived stats
-  const { fifties, hundreds } = computeMilestones(matchHistory);
-  const bestBowling = computeBestBowling(bowlingPerfs);
+  // 3. Get badges
+  const titles = await getPlayerGamification(playerId);
+  const awards = await getPlayerAwards(playerId);
+  const motm = awards.filter(a => a.name?.toLowerCase().includes('man of the match') ||
+                                   a.name?.toLowerCase().includes('fighter of the match')).length;
 
   const Player = (await import("../../backend/src/models/Player.js")).default;
 
   const payload = {
-    external_id:      String(info.player_id || playerId),
-    name:             info.name || slug,
-    image_url:        info.profile_photo || '',
-    role:             info.playing_role || 'Unknown',
-    matches:          info.total_matches || 0,
-    runs:             info.total_runs || 0,
-    wickets:          info.total_wickets || 0,
-    catches:          ex.catches || 0,
-    run_outs:         ex.run_outs || 0,
-    stumpings:        0,
-    man_of_the_match: ex.man_of_the_match || 0,
-    tournaments:      ex.tournaments || 0,
+    external_id:      String(playerId),
+    matches:          parsed.batting?.matches || parsed.batting?.innings || 0,
+    runs:             parsed.batting?.total_runs || 0,
+    wickets:          parsed.bowling?.wickets || 0,
+    man_of_the_match: motm || 0,
+    titles,
     batting: {
-      average:     ex.batting_average || 0,
-      strike_rate: ex.strike_rate || 0,
-      high_score:  ex.high_score || 0,
-      total_runs:  info.total_runs || 0,
-      innings:     ex.innings || 0,
-      fours:       ex.fours || 0,
-      sixes:       ex.sixes || 0,
-      fifties,
-      hundreds,
+      average:     parsed.batting?.average || 0,
+      strike_rate: parsed.batting?.strike_rate || 0,
+      high_score:  parsed.batting?.high_score || 0,
+      total_runs:  parsed.batting?.total_runs || 0,
+      innings:     parsed.batting?.innings || 0,
+      fours:       parsed.batting?.fours || 0,
+      sixes:       parsed.batting?.sixes || 0,
+      fifties:     parsed.batting?.fifties || 0,
+      hundreds:    parsed.batting?.hundreds || 0,
     },
     bowling: {
-      wickets:      info.total_wickets || 0,
-      economy:      ex.economy || 0,
-      overs:        ex.overs || 0,
-      average:      info.total_wickets > 0 && ex.overs > 0 ? Math.round((ex.overs * 6 / info.total_wickets) * 100) / 100 : 0,
-      five_w:       0,
-      best_bowling: bestBowling,
+      wickets:       parsed.bowling?.wickets || 0,
+      economy:       parsed.bowling?.economy || 0,
+      overs:         parsed.bowling?.overs || 0,
+      average:       parsed.bowling?.average || 0,
+      five_w:        parsed.bowling?.five_w || 0,
+      best_bowling:  parsed.bowling?.best_bowling || '—',
     },
-    general: {
-      dob:           info.dob || '',
-      batting_style: info.batting_hand || '',
-      bowling_style: info.bowling_style || '',
-    },
-    match_history:  matchHistory,
+    match_history:  processedHistory,
     last_synced_at: new Date(),
   };
+
+  // Preserve existing name/image
+  const existing = await Player.findOne({ external_id: payload.external_id });
+  if (existing) {
+    payload.name = existing.name;
+    payload.image_url = existing.image_url;
+  }
 
   const updated = await Player.findOneAndUpdate(
     { external_id: payload.external_id },
@@ -106,9 +77,9 @@ async function syncOnePlayer(playerId, slug) {
   return {
     name: updated.name, image_url: updated.image_url,
     matches: updated.matches, runs: updated.runs, wickets: updated.wickets,
-    catches: updated.catches, run_outs: updated.run_outs, stumpings: updated.stumpings,
     fifties: updated.batting?.fifties, hundreds: updated.batting?.hundreds,
     best_bowling: updated.bowling?.best_bowling,
+    match_count: processedHistory.length,
     external_id: updated.external_id,
   };
 }
@@ -138,7 +109,7 @@ export default async function handler(req, res) {
     }
 
     try {
-      const result = await syncOnePlayer(playerId, slug);
+      const result = await syncOnePlayer(playerId);
       return res.json({ success: true, synced: result });
     } catch (err) {
       return res.status(500).json({ success: false, error: err.message });
